@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Recall cover: Ctrl+F for the physical world. A perception view shows a person lifting a red mug with the pickup attributed to their wrist. Edge visual memory on the SiMa.ai Modalix, under 10 watts, no cloud.">
+  <defs>
+    <radialGradient id="g" cx="22%" cy="35%" r="85%"><stop offset="0" stop-color="#171b20"/><stop offset="1" stop-color="#050505"/></radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".045"/></pattern>
+    <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#050505" stop-opacity="1"/><stop offset=".35" stop-color="#050505" stop-opacity="0"/></linearGradient>
+    <clipPath id="scene"><rect x="560" y="60" width="700" height="520"/></clipPath>
+  </defs>
+  <rect width="1280" height="640" fill="url(#g)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+
+  <!-- perception scene, right, clipped -->
+  <g clip-path="url(#scene)">
+    <g transform="translate(560,60) scale(0.547)">
+      
+      <polygon points="250,300 1030,300 1170,650 110,650" fill="#171a1e" stroke="#2a2f35" stroke-width="1.5"/>
+      <polygon points="250,300 1030,300 1040,312 240,312" fill="#1f242a"/>
+      <!-- laptop -->
+      <polygon points="340,470 600,470 612,522 326,522" fill="#ff5fb0" fill-opacity=".26" stroke="#ff5fb0" stroke-width="2"/>
+      <rect x="352" y="332" width="234" height="140" rx="4" fill="#ff5fb0" fill-opacity=".22" stroke="#ff5fb0" stroke-width="2"/>
+      <!-- bottle -->
+      <rect x="868" y="384" width="40" height="176" rx="12" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="2"/>
+      <rect x="875" y="356" width="26" height="36" rx="4" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="2"/>
+      <!-- phone -->
+      <rect x="630" y="590" width="58" height="26" rx="4" fill="#ff9a3c" fill-opacity=".26" stroke="#ff9a3c" stroke-width="2"/>
+      <!-- book -->
+      <polygon points="950,478 1076,478 1092,556 938,556" fill="#a78bfa" fill-opacity=".24" stroke="#a78bfa" stroke-width="2"/>
+      <!-- mug lifted -->
+      <g transform="translate(-6,-34)">
+        <rect x="700" y="500" width="70" height="72" rx="8" fill="#5a1d1d"/>
+        <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#5a1d1d" stroke-width="10"/>
+        <rect x="700" y="500" width="70" height="72" rx="8" fill="#35d1e6" fill-opacity=".28" stroke="#35d1e6" stroke-width="2"/>
+        <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#35d1e6" stroke-width="2"/>
+      </g>
+      <!-- person -->
+      <rect x="860" y="96" width="290" height="370" fill="#4ba3ff" fill-opacity=".06" stroke="#4ba3ff" stroke-width="1.5" stroke-dasharray="8 5"/>
+      <g stroke="#4ba3ff" stroke-width="3.5" stroke-linecap="round">
+        <line x1="935" y1="200" x2="1045" y2="202"/><line x1="935" y1="200" x2="855" y2="296"/><line x1="855" y1="296" x2="748" y2="472"/>
+        <line x1="1045" y1="202" x2="1088" y2="312"/><line x1="1088" y1="312" x2="1098" y2="404"/>
+        <line x1="935" y1="200" x2="945" y2="392"/><line x1="1045" y1="202" x2="1035" y2="394"/><line x1="945" y1="392" x2="1035" y2="394"/>
+        <line x1="990" y1="128" x2="935" y2="200"/><line x1="990" y1="128" x2="1045" y2="202"/>
+      </g>
+      <g fill="#0a0b0d" stroke="#4ba3ff" stroke-width="3">
+        <circle cx="990" cy="128" r="10"/><circle cx="935" cy="200" r="6"/><circle cx="1045" cy="202" r="6"/><circle cx="855" cy="296" r="6"/><circle cx="748" cy="472" r="6"/><circle cx="1088" cy="312" r="6"/><circle cx="1098" cy="404" r="6"/><circle cx="945" cy="392" r="6"/><circle cx="1035" cy="394" r="6"/>
+      </g>
+      <circle cx="748" cy="472" r="22" fill="none" stroke="#f0b84b" stroke-width="3"/>
+      <circle cx="748" cy="472" r="80" fill="none" stroke="#f0b84b" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="4 6"/>
+      <line x1="748" y1="472" x2="729" y2="502" stroke="#f0b84b" stroke-width="2.5"/>
+      <g transform="translate(560,556)"><rect width="330" height="34" fill="#0a0b0d" stroke="#f0b84b" stroke-width="1.5"/><rect width="6" height="34" fill="#f0b84b"/><text x="18" y="23" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="17" fill="#f0b84b">L WRIST → #3 · 41 PX · PICKED UP</text></g>
+      <g transform="translate(900,60)"><rect width="250" height="34" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="1.5"/><rect width="6" height="34" fill="#4ba3ff"/><text x="18" y="23" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="17" fill="#f5f7f8">P1 PERSON IN BLUE SHIRT</text></g>
+      <g transform="translate(520,400)"><rect width="240" height="34" fill="#0a0b0d" stroke="#35d1e6" stroke-width="1.5"/><rect width="6" height="34" fill="#35d1e6"/><text x="18" y="23" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="17" fill="#f5f7f8">#3 RED CERAMIC MUG</text></g>
+    </g>
+    <rect x="560" y="60" width="700" height="520" fill="url(#fade)"/>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".6" stroke-width="2" fill="none">
+    <path d="M1226 60 H1260 V94"/><path d="M1260 546 V580 H1226"/>
+  </g>
+
+  <!-- left: wordmark and headline -->
+  <g transform="translate(64,64)">
+    <g transform="skewX(-18)"><path d="M0 0 H40 M0 0 V26 M0 26 H40" fill="none" stroke="#f5f7f8" stroke-width="3"/></g>
+    <rect x="34" y="11.5" width="26" height="3" fill="#f5f7f8"/>
+  </g>
+  <text x="140" y="88" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="30" letter-spacing="2" fill="#f5f7f8">RECALL</text>
+  <text x="352" y="88" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" letter-spacing="2" fill="#8b9298">EDGE VISUAL MEMORY</text>
+
+  <text font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="900" font-size="88" letter-spacing="-3" fill="#f5f7f8">
+    <tspan x="64" y="250"><tspan fill="#4ba3ff">Ctrl+F</tspan> for the</tspan>
+    <tspan x="64" y="342">physical</tspan>
+    <tspan x="64" y="434">world.</tspan>
+  </text>
+  <text x="64" y="492" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="19" fill="#c9ced3">A camera on one sub-10-watt chip that remembers</text>
+  <text x="64" y="518" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="19" fill="#c9ced3">everything in a room and answers out loud.</text>
+
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" letter-spacing="1.5">
+    <g transform="translate(64,556)"><rect width="176" height="30" fill="#0a0b0d" stroke="#4ba3ff"/><circle cx="14" cy="15" r="3" fill="#4ba3ff"/><text x="26" y="19" fill="#f5f7f8">SIMA.AI MODALIX</text></g>
+    <g transform="translate(252,556)"><rect width="92" height="30" fill="#0a0b0d" stroke="#54d68a"/><circle cx="14" cy="15" r="3" fill="#54d68a"/><text x="26" y="19" fill="#f5f7f8">&lt; 10 W</text></g>
+    <g transform="translate(356,556)"><rect width="120" height="30" fill="#0a0b0d" stroke="#54d68a"/><circle cx="14" cy="15" r="3" fill="#54d68a"/><text x="26" y="19" fill="#f5f7f8">NO CLOUD</text></g>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".6" stroke-width="2" fill="none">
+    <path d="M20 54 V20 H54"/><path d="M20 586 V620 H54"/>
+  </g>
+</svg>

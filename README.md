@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://vnmoorthy.github.io/recall/"><img alt="Website" src="https://img.shields.io/badge/website-vnmoorthy.github.io%2Frecall-4ba3ff?style=flat-square"></a>
   <a href="https://vnmoorthy.github.io/recall/app.html"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-launch-54d68a?style=flat-square"></a>
-  <a href="https://claude.ai/artifact/EsqEXESghPZp9JTkayKznM"><img alt="Pitch deck" src="https://img.shields.io/badge/pitch%20deck-15%20slides-f0b84b?style=flat-square"></a>
+  <a href="docs/Recall-Pitch-Deck.pptx"><img alt="Pitch deck" src="https://img.shields.io/badge/pitch%20deck-15%20slides-f0b84b?style=flat-square"></a>
   <img alt="Tests" src="https://img.shields.io/badge/tests-40%20passed-54d68a?style=flat-square">
   <img alt="Platform" src="https://img.shields.io/badge/runs%20on-SiMa.ai%20Modalix%20%3C%2010%20W-f5f7f8?style=flat-square">
   <img alt="Cloud" src="https://img.shields.io/badge/cloud-none-ff4d42?style=flat-square">
@@ -47,7 +47,7 @@ With no DevKit attached, the app runs a labeled `SIMULATION` replay of the four-
   <a href="https://vnmoorthy.github.io/recall/app.html"><img src="docs/ui-desktop.png" alt="The Recall interface: live perception with the scenario replay, the memory query panel with an answer and two evidence frames, the object index with state pills, and the class-colored event log" width="100%"></a>
 </p>
 
-[Animated walkthrough (GIF)](demo/recall-product-demo-preview.gif) · [1280×720 MP4](demo/recall-product-demo.mp4) · [Presenter script](docs/DEMO_SCRIPT.md) · [Verification guide](docs/VERIFY_PRODUCT.md) · [Pitch deck](https://claude.ai/artifact/EsqEXESghPZp9JTkayKznM) · [Submission copy](docs/submission.md)
+[Animated walkthrough (GIF)](demo/recall-product-demo-preview.gif) · [1280×720 MP4](demo/recall-product-demo.mp4) · [Presenter script](docs/DEMO_SCRIPT.md) · [Verification guide](docs/VERIFY_PRODUCT.md) · [Pitch deck (PowerPoint)](docs/Recall-Pitch-Deck.pptx) · [Pitch deck (editable canvas)](https://claude.ai/artifact/EsqEXESghPZp9JTkayKznM) · [Cover image](docs/cover.png) · [Submission copy](docs/submission.md)
 
 ## One chip, seven jobs
 
