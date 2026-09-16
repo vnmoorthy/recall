@@ -11,6 +11,18 @@ service. Recall keeps video, descriptions, questions, and speech inside the
 local network. The runtime contains no cloud client and the UI has no CDN,
 external font, script, or image dependency.
 
+## Demo Video
+
+[![Recall product walkthrough](demo/recall-product-demo-poster.jpg)](demo/recall-product-demo.mp4)
+
+[Watch or download the 1280x720 MP4](demo/recall-product-demo.mp4) ·
+[Presenter script](docs/DEMO_SCRIPT.md) ·
+[Reusable browser recorder](tools/record_demo.py)
+
+This recorded cut demonstrates the offline `SIMULATION` workflow and labels it
+accordingly. A connected-DevKit recording should replace it only after the live
+hardware gates pass.
+
 ## Current State
 
 This workspace has a usable hardware-backed product with a synthetic perception
