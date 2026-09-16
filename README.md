@@ -11,9 +11,11 @@ service. Recall keeps video, descriptions, questions, and speech inside the
 local network. The runtime contains no cloud client and the UI has no CDN,
 external font, script, or image dependency.
 
-## Demo Video
+## Interactive Demo
 
-[![Recall product walkthrough](demo/recall-product-demo-poster.jpg)](demo/recall-product-demo.mp4)
+**[Launch Recall in your browser](https://vnmoorthy.github.io/recall/)**
+
+[![Animated Recall product walkthrough](demo/recall-product-demo-preview.gif)](https://vnmoorthy.github.io/recall/)
 
 [Watch or download the 1280x720 MP4](demo/recall-product-demo.mp4) ·
 [Presenter script](docs/DEMO_SCRIPT.md) ·

@@ -4,6 +4,7 @@
 
 - Recorded walkthrough: [`demo/recall-product-demo.mp4`](../demo/recall-product-demo.mp4)
 - Reusable recorder: [`tools/record_demo.py`](../tools/record_demo.py)
+- Public interactive demo: <https://vnmoorthy.github.io/recall/>
 - Runtime UI: `http://127.0.0.1:8080`
 
 The included recording is an honest walkthrough of the offline `SIMULATION`
