@@ -28,8 +28,9 @@ hardware gates pass.
 
 ## Current State
 
-This workspace has a usable hardware-backed product with a synthetic perception
-fallback. On the connected DevKit at `10.42.0.232`:
+This workspace contains a hardware-backed product with a synthetic perception
+fallback. The DevKit is currently unreachable at `10.42.0.232`; during the last
+connected run:
 
 - Gemma 4 E2B is resident on the MLA as the temporary VLM fallback.
 - Whisper Small is resident on the MLA and transcribes through port 9998.
@@ -39,8 +40,10 @@ fallback. On the connected DevKit at `10.42.0.232`:
 - The aerospace operations UI auto-plays a four-stage local replay when the
   DevKit link is unavailable. It advances the inventory, custody events,
   evidence, and summary in place, and upgrades to live data when the API returns.
-- The exact YOLO26 segmentation/pose archives and Qwen3-VL model are not
-  installed because SiMa device authentication requires a human login.
+- The exact YOLO26 segmentation and pose archives are staged in the shared
+  `models/` directory and ready for the next hardware launch.
+- Qwen3-VL still requires `llima pull` on the DevKit; the launcher uses the
+  already-verified Gemma model until Qwen is present.
 
 When both YOLO archives appear in `models/`, `run_devkit.sh` automatically stops
 the preview relay and starts the combined hardware perception worker. No source
@@ -102,6 +105,13 @@ SIMA_CLI_CHECK_FOR_UPDATE=0 sima-cli download -d models \
   'https://docs.sima.ai/pkg_downloads/SDK2.1.3/models/modalix/yolo26-segmentation/yolo26m-seg-bf16-b1.tar.gz'
 SIMA_CLI_CHECK_FOR_UPDATE=0 sima-cli download -d models \
   'https://docs.sima.ai/pkg_downloads/SDK2.1.3/models/modalix/yolo26-pose/yolo26m-pose-int8-b1.tar.gz'
+```
+
+The shared workspace packages were downloaded and gzip-validated on 2026-09-16:
+
+```text
+41bebbecca2f20de40c76d4bc6656c3fe369f9c139929dad93922492efa9b591  yolo26m-seg-bf16-b1.tar.gz
+dd516a687ef1a7efa3f40da5e459541aa1d2c78fcb2ecce8de74bdbe80c7a1e1  yolo26m-pose-int8-b1.tar.gz
 ```
 
 On the DevKit, install the requested resident VLM:
@@ -242,19 +252,20 @@ Measurements below were taken on 2026-09-16 on the connected Modalix board.
 The active MLA shared-memory service is `simaai-appcomplex.service`. Observed
 process RSS was approximately 158 MB preview, 471 MB GenAI server, and 173 MB
 API/Piper client. The board reported 5.8 GiB RAM and no swap. Exact segmentation
-and pose FPS remain **NOT VERIFIED** until their authenticated archives arrive.
+and pose FPS remain **NOT VERIFIED** until the DevKit reconnects and runs the
+newly staged archives.
 
 ## Verification Gates
 
 | Gate | Status | Evidence / remaining work |
 |---|---|---|
-| M0 baselines | NOT VERIFIED | Exact segmentation, pose, and Qwen packages require SiMa login. Insight H.264 ingest and Gemma crop VLM are verified. |
-| M1 tracking | PARTIAL | Mask/tracker tests pass; combined worker exists. Five real IDs, 60-second churn, and seg FPS await models/clip. |
+| M0 baselines | NOT VERIFIED | Exact segmentation and pose packages are staged. Their live run plus the Qwen pull await DevKit reconnection. Insight H.264 ingest and Gemma crop VLM are verified. |
+| M1 tracking | PARTIAL | Mask/tracker tests pass; combined worker exists. Five real IDs, 60-second churn, and seg FPS await a connected board and clip. |
 | M2 events | PARTIAL | Unit attribution, direction, empty-scene, carried, and put-down gates pass. Recorded human clip awaits assets. |
-| M3 naming/memory | PARTIAL | MLA crop naming and one-call audit pass; 4-of-5 real color-name gate awaits perception models. |
+| M3 naming/memory | PARTIAL | MLA crop naming and one-call audit pass; 4-of-5 real color-name gate awaits the hardware perception run. |
 | M4 answers/speech | VERIFIED WITH FALLBACK VLM | 12-question evidence gate passes; typed answer, summary, Whisper, Piper, snapshots, and sub-8-second warm responses verified. Final Qwen substitution remains. |
 | M5 API/UI | PARTIAL | API and zero-CDN UI run; WAV microphone path works. Browser MediaRecorder and unplugged-browser inspection need a human browser pass. |
-| M6 live camera | NOT VERIFIED | Five repeated physical runs and backup recording need camera, people, and installed vision packages. |
+| M6 live camera | NOT VERIFIED | Five repeated physical runs and backup recording need a connected camera, DevKit, and people. |
 | M7 polish | PARTIAL | Status UI, this README, and `docs/deck.md` are complete; final real FPS belongs in both. |
 
 ## Tests

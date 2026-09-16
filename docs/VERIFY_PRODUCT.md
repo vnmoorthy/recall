@@ -59,11 +59,13 @@ system reports `LIVE PERCEPTION ONLINE`; the first panel changes to
 | Result | Meaning | Required action |
 |---|---|---|
 | API curl cannot connect | DevKit or Ethernet link is unavailable | Power and reconnect the DevKit; verify its address. |
-| API responds, mode is `synthetic` | Preview/fallback process is active | Install the exact compiled YOLO26 packages and restart with `./run_devkit.sh --restart`. |
+| API responds, mode is `synthetic` | Preview/fallback process is active | Confirm both staged YOLO26 archives exist and restart with `./run_devkit.sh --restart`. |
 | Hardware mode, zero FPS | Model or camera pipeline is not producing samples | Check DevKit logs, model paths, and camera/RTSP source. |
 | Video works, queries fail | Perception is active but GenAI is unavailable | Verify the resident Qwen/Gemma server and Recall API logs. |
 | Public site says hardware offline | Expected for GitHub Pages | Use the local UI on the directly connected laptop. |
 
-SiMa model installation requires interactive authentication. Use the commands
-in [Install The Missing Models](../README.md#install-the-missing-models) only
-after the DevKit is reachable; never paste credentials into an issue or chat.
+The exact segmentation and pose packages are already staged in the shared
+`models/` directory. The next `./run_devkit.sh --restart` automatically selects
+hardware perception; no second download or source change is needed. Qwen still
+requires `llima pull` after the DevKit reconnects. Never paste credentials into
+an issue or chat.
