@@ -21,6 +21,8 @@ fallback. On the connected DevKit at `10.42.0.232`:
 - Piper runs locally on the DevKit and serves WAV speech through Recall.
 - An Insight-hosted 640x480 H.264 recording is relayed to channel 0.
 - The API, memory, question, summary, speech, and air-gapped UI paths work.
+- The aerospace operations UI includes an immediate, interactive local evidence
+  demo when the DevKit link is unavailable and upgrades to live data in place.
 - The exact YOLO26 segmentation/pose archives and Qwen3-VL model are not
   installed because SiMa device authentication requires a human login.
 
