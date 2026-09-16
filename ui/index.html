@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Recall</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><h1>Recall</h1><span>Visual memory</span></div>
+    <div class="status-group">
+      <span id="mode-badge" class="badge warning">CONNECTING</span>
+      <span id="offline-badge" class="badge">OFFLINE</span>
+      <button id="settings-button" class="icon-button" title="Connection settings" aria-label="Connection settings">&#9881;</button>
+    </div>
+  </header>
+
+  <section id="status-strip" class="status-strip" aria-label="Runtime status">
+    <div><span>SEG</span><strong id="seg-fps">0.0 fps</strong></div>
+    <div><span>POSE</span><strong id="pose-fps">0.0 fps</strong></div>
+    <div><span>OBJECTS</span><strong id="object-count">0</strong></div>
+    <div><span>VLM CALLS</span><strong id="vlm-calls">0</strong></div>
+    <div><span>VLM P50</span><strong id="vlm-latency">0 ms</strong></div>
+    <div class="model-stat"><span>RESIDENT MODEL</span><strong id="model-name">-</strong></div>
+  </section>
+
+  <main>
+    <section class="workspace">
+      <div class="live-pane">
+        <div class="section-title"><h2>Live view</h2><span class="live-dot">LIVE</span></div>
+        <div class="viewer-frame">
+          <iframe id="live-view" title="Recall live camera"></iframe>
+          <div id="viewer-fallback" class="viewer-fallback"><strong>Insight channel 0</strong><span>Waiting for video</span></div>
+        </div>
+      </div>
+      <div class="ask-pane">
+        <div class="section-title"><h2>Ask Recall</h2></div>
+        <form id="ask-form">
+          <input id="question" name="question" autocomplete="off" placeholder="Where is the red mug?" aria-label="Question">
+          <button id="mic-button" class="icon-button mic" type="button" title="Ask by voice" aria-label="Ask by voice">&#9679;</button>
+          <button class="send-button" type="submit">Ask</button>
+        </form>
+        <div id="answer" class="answer" aria-live="polite">Recall is indexing the room.</div>
+        <div id="answer-snapshots" class="snapshot-grid"></div>
+        <button id="summary-button" class="secondary-button" type="button">Summarize last 10 minutes</button>
+      </div>
+    </section>
+
+    <section class="memory-band">
+      <div class="inventory-pane">
+        <div class="section-title"><h2>Inventory</h2><span id="inventory-count">0 items</span></div>
+        <div id="inventory" class="inventory-grid"></div>
+      </div>
+      <div class="timeline-pane">
+        <div class="section-title"><h2>Timeline</h2><span>Newest first</span></div>
+        <div id="timeline" class="timeline"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settings-dialog">
+    <form method="dialog">
+      <div class="section-title"><h2>Connection</h2><button class="icon-button" value="cancel" aria-label="Close">&#215;</button></div>
+      <label>Recall API<input id="api-url" value="http://10.42.0.232:8090"></label>
+      <label>Insight viewer<input id="insight-url" value="https://10.42.0.1:8081/static/viewer.html?mode=light&amp;src=0&amp;max_channels=4"></label>
+      <button id="save-settings" class="send-button" value="default">Save</button>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>

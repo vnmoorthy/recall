@@ -1,0 +1,14 @@
+[
+  {"question":"What's on the table?","expected_event_type":"object_appeared"},
+  {"question":"Where is the red mug?","expected_event_type":"object_missing"},
+  {"question":"Who moved the red mug?","expected_event_type":"picked_up"},
+  {"question":"Which direction did the mug go?","expected_event_type":"picked_up"},
+  {"question":"Who took my laptop?","expected_event_type":"picked_up"},
+  {"question":"When was the laptop last seen?","expected_event_type":"object_missing"},
+  {"question":"Is the green bottle still here?","expected_event_type":"object_appeared"},
+  {"question":"Where is my phone?","expected_event_type":"object_appeared"},
+  {"question":"What happened in the last ten minutes?","expected_event_type":"picked_up"},
+  {"question":"Did anyone leave?","expected_event_type":"person_left"},
+  {"question":"What objects are missing?","expected_event_type":"object_missing"},
+  {"question":"Summarize the room today","expected_event_type":"picked_up"}
+]

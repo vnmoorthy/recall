@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv-pipertts/
+data/*.db
+logs/*
+!logs/.gitkeep
+run/*
+!run/.gitkeep
+media/frames/*
+media/crops/*
+!media/frames/.gitkeep
+!media/crops/.gitkeep
+models/*.tar.gz
+vendor/**/ui/assets/*.onnx
+vendor/**/ui/assets/piper-plus/
