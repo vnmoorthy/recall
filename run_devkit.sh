@@ -150,7 +150,19 @@ if ! curl -fsS --max-time 1 http://127.0.0.1:8090/health >/dev/null 2>&1; then
   exit 1
 fi
 
-[[ -f "$ROOT/vendor/neat-genai-studio/src/python/ui/assets/en_US-kristin-medium.onnx" ]] || \
+PIPER_MODEL="$ROOT/vendor/neat-genai-studio/src/python/ui/assets/en_US-kristin-medium.onnx"
+if [[ -f "$PIPER_MODEL" ]]; then
+  recall_ready=false
+  for _ in {1..120}; do
+    if curl -fsS --max-time 1 http://127.0.0.1:8090/ready >/dev/null 2>&1; then
+      recall_ready=true
+      break
+    fi
+    sleep 0.25
+  done
+  $recall_ready || echo "warning: Recall is live but a required component is not ready" >&2
+else
   echo "warning: Piper is unavailable; run ./setup_tts_devkit.sh once" >&2
+fi
 echo "Recall mode: ${MODE:---hardware}"
 echo "Recall API: http://$(hostname -I | awk '{print $1}'):8090"

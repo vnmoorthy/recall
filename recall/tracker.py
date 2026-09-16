@@ -91,10 +91,13 @@ def _bbox_iou(a, b) -> float:
 
 
 class PersonTracker:
-    def __init__(self, iou_threshold: float = 0.3, max_missing_frames: int = 15):
+    def __init__(
+        self, iou_threshold: float = 0.3, max_missing_frames: int = 15,
+        start_id: int = 1,
+    ):
         self.iou_threshold = iou_threshold
         self.max_missing_frames = max_missing_frames
-        self._next_id = 1
+        self._next_id = max(1, int(start_id))
         self.tracks: dict[int, PersonTrack] = {}
 
     def update(self, detections: list[PersonDetection], timestamp: float) -> list[PersonTrack]:
@@ -145,6 +148,7 @@ class ObjectTracker:
         missing_seconds: float = 2.0,
         reacquire_ratio: float = 0.08,
         reacquire_seconds: float = 60.0,
+        start_id: int = 1,
     ):
         self.iou_threshold = iou_threshold
         self.centroid_ratio = centroid_ratio
@@ -152,7 +156,7 @@ class ObjectTracker:
         self.missing_seconds = missing_seconds
         self.reacquire_ratio = reacquire_ratio
         self.reacquire_seconds = reacquire_seconds
-        self._next_id = 1
+        self._next_id = max(1, int(start_id))
         self.tracks: dict[int, ObjectTrack] = {}
 
     def update(

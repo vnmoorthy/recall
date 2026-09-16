@@ -68,6 +68,8 @@ class Speaker:
         self.engine = engine
         self.playback = playback
         self.queue: Queue[str] = Queue(maxsize=2)
+        self.dropped = 0
+        self.errors = 0
         self.stop_event = threading.Event()
         self.thread = threading.Thread(target=self._run, name="recall-speaker", daemon=True)
         self.warm_thread = threading.Thread(target=self._warm, name="recall-piper-warm", daemon=True)
@@ -93,11 +95,12 @@ class Speaker:
             self.queue.put_nowait(text)
             return True
         except Full:
+            self.dropped += 1
             return False
 
     def close(self) -> None:
         self.stop_event.set()
-        self.thread.join(timeout=30)
+        self.thread.join(timeout=65)
         self.warm_thread.join(timeout=30)
         self.engine.close()
 
@@ -113,14 +116,16 @@ class Speaker:
                     with tempfile.NamedTemporaryFile(suffix=".wav") as output:
                         output.write(audio)
                         output.flush()
-                        subprocess.run(
+                        completed = subprocess.run(
                             ["aplay", "-q", output.name],
                             check=False,
                             timeout=60,
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,
                         )
+                        if completed.returncode:
+                            raise RuntimeError(f"aplay exited with status {completed.returncode}")
             except Exception:
-                pass
+                self.errors += 1
             finally:
                 self.queue.task_done()

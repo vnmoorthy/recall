@@ -41,6 +41,13 @@ def test_people_tracker_keeps_distinct_ids():
     assert all(p.missing_frames == 0 for p in first)
 
 
+def test_trackers_resume_ids_after_persisted_state():
+    objects = ObjectTracker(start_id=12)
+    people = PersonTracker(start_id=9)
+    assert objects.update([object_detection(30)], 0.0, 200)[0].id == 12
+    assert people.update([PersonDetection((0, 0, 50, 100), 0.9)], 0.0)[0].id == 9
+
+
 def test_zero_timestamp_can_still_become_stationary():
     tracker = ObjectTracker()
     tracker.update([object_detection(30)], 0.0, 200)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 import json
@@ -13,6 +14,7 @@ import uuid
 from urllib import request
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -29,7 +31,7 @@ class RuntimeStatus:
     seg_fps: float = 0.0
     pose_fps: float = 0.0
     vlm_calls: int = 0
-    vlm_latencies: list[float] = field(default_factory=list)
+    vlm_latencies: deque[float] = field(default_factory=lambda: deque(maxlen=512))
     resident_model: str = "unavailable"
     objects_tracked: int = 0
     perception_mode: str = "synthetic"
@@ -82,6 +84,8 @@ class RuntimeStatus:
                             "metadata_errors", "frame_write_errors",
                             "track_write_drops",
                             "track_write_errors",
+                            "naming_vlm_calls", "naming_vlm_failures",
+                            "naming_vlm_ms_p50",
                         )
                         if key in worker
                     })
@@ -89,6 +93,7 @@ class RuntimeStatus:
                     payload["metrics_age_seconds"] = round(max(0.0, age), 1)
             except (OSError, ValueError, TypeError):
                 pass
+        payload["vlm_calls_total"] = payload["vlm_calls"] + int(payload.get("naming_vlm_calls", 0))
         return payload
 
 
@@ -122,19 +127,37 @@ def create_app(memory: Memory, answerer: Answerer, summarizer: Summarizer, statu
     def health():
         return {"status": "ok", "service": "recall", "time": time.time()}
 
+    @app.get("/ready", responses={503: {"description": "A required local component is unavailable"}})
+    def ready():
+        payload = status.payload()
+        tts = speaker.status() if speaker and hasattr(speaker, "status") else "unavailable"
+        is_ready = payload["perception_healthy"] and (
+            payload["resident_model"] == "fallback rules" or payload["genai_healthy"]
+        ) and tts == "piper-ready"
+        return JSONResponse(
+            status_code=200 if is_ready else 503,
+            content={"ready": is_ready, "perception": payload["perception_healthy"],
+                     "genai": payload["genai_healthy"], "tts": tts},
+        )
+
     @app.get("/inventory")
     def inventory():
         return memory.inventory(time.time())
 
     @app.get("/events")
-    def events(window: int = Query(default=900, ge=1, le=86400)):
-        return memory.events_window(window)
+    def events(
+        window: int = Query(default=900, ge=1, le=86400),
+        limit: int = Query(default=500, ge=1, le=1000),
+    ):
+        return memory.events_window(window, limit=limit)
 
     @app.get("/objects/{object_id}/timeline")
-    def timeline(object_id: int):
+    def timeline(object_id: int, limit: int = Query(default=500, ge=1, le=1000)):
         if object_id <= 0:
             raise HTTPException(400, "object id must be positive")
-        return memory.timeline(object_id)
+        if not memory.has_object(object_id):
+            raise HTTPException(404, "object not found")
+        return memory.timeline(object_id, limit)
 
     @app.post("/ask")
     def ask(body: AskBody):
@@ -220,6 +243,8 @@ def create_app(memory: Memory, answerer: Answerer, summarizer: Summarizer, statu
         status.objects_tracked = len(memory.inventory())
         payload = status.payload()
         payload["tts"] = speaker.status() if speaker and hasattr(speaker, "status") else "piper-ready" if speaker else "unavailable"
+        payload["speech_queue_drops"] = getattr(speaker, "dropped", 0)
+        payload["speech_playback_errors"] = getattr(speaker, "errors", 0)
         return payload
 
     return app

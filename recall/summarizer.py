@@ -38,10 +38,13 @@ class Summarizer:
         else:
             summary, latency = self._fallback(context), 0.0
         snapshots = []
+        snapshot_paths = set()
         for event in chosen:
             stored = self.memory.event_by_id(event["id"])
-            if stored:
+            path = (stored or {}).get("frame_path") or (stored or {}).get("crop_path")
+            if stored and path and path not in snapshot_paths:
                 snapshots.append({"event_id": event["id"], "frame_path": stored.get("frame_path"), "crop_path": stored.get("crop_path")})
+                snapshot_paths.add(path)
         return {"summary": summary, "event_ids": [event["id"] for event in chosen], "snapshots": snapshots, "vlm_ms": latency}
 
     @staticmethod

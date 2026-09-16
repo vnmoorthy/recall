@@ -45,7 +45,7 @@ def _where(centroid: list[float], frame_width: float = 800.0) -> str:
 def build_context(memory: Memory, window: int, now: float | None = None) -> dict:
     now = time.time() if now is None else now
     inventory = []
-    for item in memory.inventory(now):
+    for item in memory.inventory(now)[:100]:
         inventory.append(
             {
                 "id": item["id"],
@@ -83,6 +83,13 @@ def parse_json_response(text: str) -> dict:
     if not isinstance(value, dict):
         raise ValueError("model response JSON must be an object")
     return value
+
+
+def answer_times_are_grounded(answer: str, context: dict) -> bool:
+    cited = set(re.findall(r"\b\d{2}:\d{2}:\d{2}\b", answer))
+    known = {item["last_seen"] for item in context["inventory"]}
+    known.update(event["time"] for event in context["events"])
+    return cited <= known
 
 
 @dataclass
@@ -152,6 +159,8 @@ class Answerer:
                     96,
                 )
                 result = parse_json_response(text)
+                if not answer_times_are_grounded(str(result.get("answer", "")), context):
+                    result = self._fallback(question, context)
             except Exception:
                 result = self._fallback(question, context)
         else:

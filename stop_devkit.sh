@@ -24,6 +24,13 @@ for name in api perception preview genai; do
     actual="$(tr '\0' ' ' <"$path")"
     if [[ "$actual" == *"-m recall.$module"* ]]; then
       kill "$pid" 2>/dev/null || true
+      for _ in {1..100}; do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.1
+      done
+      if kill -0 "$pid" 2>/dev/null; then
+        kill -9 "$pid" 2>/dev/null || true
+      fi
       echo "stopped $name (pid $pid)"
     fi
   done

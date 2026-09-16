@@ -33,3 +33,24 @@ def test_wal_batch_normalizes_centroid_and_reset_restarts_event_ids(tmp_path: Pa
     memory.reset()
     assert memory.add_event(Event(3, "object_appeared")) == 1
     memory.close()
+
+
+def test_batch_events_limits_join_names_and_close_is_idempotent(tmp_path: Path):
+    memory = Memory(tmp_path / "recall.db")
+    mask = np.ones((4, 4), np.uint8)
+    obj = ObjectTrack(7, 41, "cup", mask, (2, 2), "stationary", 1, 2, "green mug")
+    person = PersonTrack(8, (0, 0, 3, 3), (), 1, 2, "person in gray")
+    memory.upsert_object(obj)
+    memory.upsert_person(person)
+    ids = memory.add_events([
+        Event(2, "picked_up", 7, 8),
+        Event(3, "put_down", 7, 8),
+    ])
+    assert ids == [1, 2]
+    assert [event["id"] for event in memory.events_window(10, now=4, limit=1)] == [2]
+    timeline = memory.timeline(7, limit=1)
+    assert timeline[0]["object_name"] == "green mug"
+    assert timeline[0]["person_name"] == "person in gray"
+    assert memory.next_track_ids() == (8, 9)
+    memory.close()
+    memory.close()

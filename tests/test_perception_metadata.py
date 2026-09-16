@@ -5,7 +5,7 @@ import numpy as np
 
 from recall.perception import (
     FrameWriter, PerceptionConfig, TrackWriter, _crop_for_track, _pose_metadata,
-    _segmentation_metadata, _validate_config,
+    _segmentation_metadata, _tensor_bgr, _validate_config,
 )
 from recall.tracker import FrameState, ObjectTrack
 
@@ -40,6 +40,40 @@ def test_pose_metadata_has_coco_keypoints():
     assert tracked["poses"][0]["id"] == "42"
 
 
+def test_pose_metadata_sanitizes_nonfinite_keypoints():
+    box = np.array([0, 0, 20, 20, 0.8, 0], np.float32)
+    points = np.zeros((17, 3), np.float32)
+    points[9] = [np.nan, np.inf, np.nan]
+    point = json.loads(_pose_metadata([(box, points)]))["poses"][0]["keypoints"][9]
+    assert point == {"name": "left_wrist", "x": 0, "y": 0, "confidence": 0.0}
+
+
+def test_tensor_bgr_rejects_truncated_or_odd_yuv420():
+    class Tensor:
+        def __init__(self, width, height, payload):
+            self.width, self.height, self.payload = width, height, payload
+
+        def is_nv12(self):
+            return True
+
+        def is_i420(self):
+            return False
+
+        def copy_payload_bytes(self):
+            return self.payload
+
+    for tensor, expected in (
+        (Tensor(4, 4, b"\0" * 10), "truncated"),
+        (Tensor(3, 4, b"\0" * 18), "dimensions"),
+    ):
+        try:
+            _tensor_bgr(tensor)
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError("malformed YUV tensor was accepted")
+
+
 def test_segmentation_metadata_stays_inside_udp_budget():
     mask = np.zeros((80, 120), np.uint8)
     mask[10:70, 10:110] = 255
@@ -68,6 +102,15 @@ def test_perception_configuration_rejects_invalid_runtime_values():
         assert "RTSP" in str(exc)
     else:
         raise AssertionError("invalid source protocol was accepted")
+    invalid_port = PerceptionConfig(
+        "rtsp://camera", "seg", "pose", "labels", video_port=70000,
+    )
+    try:
+        _validate_config(invalid_port, 640, 480, 30)
+    except ValueError as exc:
+        assert "ports" in str(exc)
+    else:
+        raise AssertionError("invalid Insight port was accepted")
 
 
 def test_track_writer_drains_without_erasing_vlm_name(tmp_path):

@@ -8,7 +8,7 @@ function storedHttpUrl(key, fallback) {
 }
 
 function timeoutSignal(milliseconds) {
-  if (typeof AbortSignal.timeout === "function") return AbortSignal.timeout(milliseconds);
+  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(milliseconds);
   const controller = new AbortController();
   setTimeout(() => controller.abort(), milliseconds);
   return controller.signal;
@@ -20,6 +20,8 @@ const state = {
   recorder: null,
   chunks: [],
   refreshing: false,
+  refreshQueued: false,
+  selectedObject: null,
 };
 
 const byId = (id) => document.getElementById(id);
@@ -58,10 +60,10 @@ function renderSnapshots(items = []) {
 function renderInventory(items) {
   byId("inventory-count").textContent = `${items.length} items`;
   byId("inventory").innerHTML = items.length ? items.map((item) => `
-    <article class="item-card">
+    <button class="item-card${state.selectedObject === item.id ? " selected" : ""}" type="button" data-object-id="${Number(item.id)}" data-object-name="${escapeHtml(item.name || item.class)}" aria-pressed="${state.selectedObject === item.id}">
       ${item.crop_path ? `<img src="${escapeHtml(mediaUrl(item.crop_path))}" alt="${escapeHtml(item.name || item.class)}">` : `<div></div>`}
       <div class="item-copy"><strong>${escapeHtml(item.name || item.class)}</strong><span>${escapeHtml(item.class)} / ${formatAge(item.seconds_since_seen)}</span><span class="state ${escapeHtml(item.state)}">${escapeHtml(item.state)}</span></div>
-    </article>`).join("") : '<div class="empty">No objects indexed</div>';
+    </button>`).join("") : '<div class="empty">No objects indexed</div>';
 }
 
 function renderEvents(events) {
@@ -74,14 +76,20 @@ function renderEvents(events) {
 }
 
 async function refresh() {
-  if (state.refreshing || document.hidden) return;
+  if (document.hidden) return;
+  if (state.refreshing) {
+    state.refreshQueued = true;
+    return;
+  }
   state.refreshing = true;
   try {
-    const [status, inventory, events] = await Promise.all([json("/status"), json("/inventory"), json("/events?window=900")]);
+    const eventPath = state.selectedObject ? `/objects/${state.selectedObject}/timeline?limit=500` : "/events?window=900&limit=500";
+    const [status, inventory, events] = await Promise.all([json("/status"), json("/inventory"), json(eventPath)]);
     byId("seg-fps").textContent = `${status.seg_fps.toFixed(1)} fps`;
     byId("pose-fps").textContent = `${status.pose_fps.toFixed(1)} fps`;
     byId("object-count").textContent = status.objects_tracked;
-    byId("vlm-calls").textContent = status.vlm_calls;
+    byId("vlm-calls").textContent = status.vlm_calls_total ?? status.vlm_calls;
+    byId("vlm-calls").title = `${status.vlm_calls || 0} answers; ${status.naming_vlm_calls || 0} naming calls; ${status.naming_vlm_failures || 0} naming failures`;
     byId("vlm-latency").textContent = `${status.vlm_ms_p50} ms`;
     byId("tts-status").textContent = status.tts === "piper-ready" ? "PIPER READY" : status.tts === "piper-warming" ? "WARMING" : "UNAVAILABLE";
     byId("model-name").textContent = status.resident_model;
@@ -89,7 +97,7 @@ async function refresh() {
     const mode = byId("mode-badge");
     mode.textContent = status.perception_healthy ? status.perception_mode.toUpperCase() : "PERCEPTION ERROR";
     mode.className = `badge ${!status.perception_healthy ? "error" : status.perception_mode === "hardware" ? "" : "warning"}`;
-    mode.title = `Metadata errors: ${status.metadata_errors || 0}; frame write errors: ${status.frame_write_errors || 0}`;
+    mode.title = `Metadata errors: ${status.metadata_errors || 0}; frame write errors: ${status.frame_write_errors || 0}; track drops: ${status.track_write_drops || 0}; speech errors: ${status.speech_playback_errors || 0}`;
     byId("offline-badge").textContent = status.offline ? "OFFLINE" : "NETWORKED";
     renderInventory(inventory);
     renderEvents(events);
@@ -99,8 +107,28 @@ async function refresh() {
     mode.className = "badge error";
   } finally {
     state.refreshing = false;
+    if (state.refreshQueued) {
+      state.refreshQueued = false;
+      setTimeout(refresh, 0);
+    }
   }
 }
+
+byId("inventory").addEventListener("click", (event) => {
+  const card = event.target.closest("[data-object-id]");
+  if (!card) return;
+  state.selectedObject = Number(card.dataset.objectId);
+  byId("timeline-title").textContent = card.dataset.objectName;
+  byId("all-events").hidden = false;
+  refresh();
+});
+
+byId("all-events").addEventListener("click", () => {
+  state.selectedObject = null;
+  byId("timeline-title").textContent = "Timeline";
+  byId("all-events").hidden = true;
+  refresh();
+});
 
 async function ask(question) {
   setQuestionBusy(true);

@@ -135,8 +135,10 @@ initial brief.
 
 ```bash
 curl http://10.42.0.232:8090/health
+curl http://10.42.0.232:8090/ready
 curl http://10.42.0.232:8090/inventory
-curl 'http://10.42.0.232:8090/events?window=900'
+curl 'http://10.42.0.232:8090/events?window=900&limit=500'
+curl 'http://10.42.0.232:8090/objects/1/timeline?limit=500'
 
 curl -H 'Content-Type: application/json' \
   -d '{"question":"Who took my laptop?"}' \
@@ -191,12 +193,12 @@ Measurements below were taken on 2026-09-16 on the connected Modalix board.
 | Gemma text warmup TTFT | 0.21 s |
 | Gemma measured generation | 32.83 tokens/s |
 | VLM crop naming (`Red mug icon`) | 0.594 s |
-| Custody question, evidence + snapshots | 2.345 s |
-| Three-sentence summary | 2.760 s |
-| Whisper Small transcription + answer | 1.669 s |
-| Piper post-prewarm synthesis/API call | 1.15-1.63 s |
+| Custody question, evidence + snapshots | 2.669 s |
+| Three-sentence summary | 6.230 s |
+| Whisper Small transcription + answer | 3.774 s |
+| Piper post-prewarm synthesis/API call | 0.539 s |
 | Piper model warmup | asynchronous during service startup |
-| Test suite | 31 passed, 1 hardware-recording gate skipped |
+| Test suite | 39 passed, 1 hardware-recording gate skipped |
 
 The active MLA shared-memory service is `simaai-appcomplex.service`. Observed
 process RSS was approximately 158 MB preview, 471 MB GenAI server, and 173 MB
@@ -248,5 +250,6 @@ RECALL_HARDWARE_E2E=1 python3 -m pytest -q tests/test_e2e_recorded.py
   `recall.db`, so rehearsals cannot overwrite real history.
 
 See `docs/deck.md` for the six-slide presentation outline,
-`docs/iterations-50.md` for the product audit, and `config.yaml` for all source,
-model, tracking, memory, API, and Insight settings.
+`docs/iterations-50.md` and `docs/iterations-100.md` for both product-audit
+rounds, and `config.yaml` for all source, model, tracking, memory, API, and
+Insight settings.

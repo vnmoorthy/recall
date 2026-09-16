@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from collections import deque
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -39,6 +40,10 @@ class Namer:
         self.queue: Queue[NamingTask] = Queue(maxsize=8)
         self.stop_event = threading.Event()
         self.submitted: set[tuple[str, int]] = set()
+        self._stats_lock = threading.Lock()
+        self.calls = 0
+        self.failures = 0
+        self.latencies: deque[float] = deque(maxlen=512)
         self.thread = threading.Thread(target=self._run, name="recall-namer", daemon=True)
         self.thread.start()
 
@@ -59,7 +64,13 @@ class Namer:
 
     def close(self) -> None:
         self.stop_event.set()
-        self.thread.join(timeout=30)
+        self.thread.join(timeout=60)
+
+    def stats(self) -> tuple[int, int, int]:
+        with self._stats_lock:
+            ordered = sorted(self.latencies)
+            median = ordered[len(ordered) // 2] if ordered else 0.0
+            return self.calls, self.failures, round(median)
 
     def _run(self):
         while not self.stop_event.is_set() or not self.queue.empty():
@@ -141,6 +152,11 @@ class Namer:
             error = str(exc)
             raise
         finally:
-            record = {"ts": time.time(), "kind": task.kind, "track_id": task.track.id, "model": self.model, "prompt": prompt, "response": response_text, "error": error, "latency_ms": (time.perf_counter() - started) * 1000}
+            latency = (time.perf_counter() - started) * 1000
+            with self._stats_lock:
+                self.calls += 1
+                self.failures += int(error is not None)
+                self.latencies.append(latency)
+            record = {"ts": time.time(), "kind": task.kind, "track_id": task.track.id, "model": self.model, "prompt": prompt, "response": response_text, "error": error, "latency_ms": latency}
             with self.log_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(record, separators=(",", ":")) + "\n")

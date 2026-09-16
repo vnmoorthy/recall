@@ -79,7 +79,7 @@ class FrameWriter:
 
     def close(self):
         self.stop_event.set()
-        self.thread.join(timeout=10)
+        self.thread.join(timeout=30)
 
     def _run(self):
         while not self.stop_event.is_set() or not self.queue.empty():
@@ -138,7 +138,7 @@ class TrackWriter:
 
     def close(self) -> None:
         self.stop_event.set()
-        self.thread.join(timeout=10)
+        self.thread.join(timeout=30)
 
     def _run(self) -> None:
         while not self.stop_event.is_set() or not self.queue.empty():
@@ -162,6 +162,7 @@ class SceneProcessor:
         self.memory = memory
         self.track_writer = track_writer
         values = cfg or PerceptionConfig("", "", "", "")
+        next_object_id, next_person_id = memory.next_track_ids()
         self.objects = ObjectTracker(
             iou_threshold=values.mask_iou,
             centroid_ratio=values.centroid_ratio,
@@ -169,8 +170,9 @@ class SceneProcessor:
             missing_seconds=values.missing_seconds,
             reacquire_ratio=values.reacquire_ratio,
             reacquire_seconds=values.reacquire_seconds,
+            start_id=next_object_id,
         )
-        self.people = PersonTracker()
+        self.people = PersonTracker(start_id=next_person_id)
         self.events = EventEngine(values.wrist_radius_px, values.attribution_seconds)
 
     def process(
@@ -196,8 +198,8 @@ class SceneProcessor:
         else:
             self.memory.upsert_tracks(state.objects, state.persons, frame_size)
         stored = []
-        for event in derived:
-            stored.append(event.__class__(**{**event.__dict__, "id": self.memory.add_event(event)}))
+        for event, event_id in zip(derived, self.memory.add_events(derived)):
+            stored.append(event.__class__(**{**event.__dict__, "id": event_id}))
         return state, stored
 
 
@@ -362,15 +364,22 @@ def _tensor_bgr(tensor) -> np.ndarray:
         value = getattr(tensor, name)
         return int(value() if callable(value) else value)
 
+    def planar_payload(width: int, height: int) -> np.ndarray:
+        expected = width * height * 3 // 2
+        if width <= 0 or height <= 0 or width % 2 or height % 2:
+            raise ValueError(f"invalid YUV420 dimensions: {width}x{height}")
+        payload = np.frombuffer(tensor.copy_payload_bytes(), dtype=np.uint8)
+        if payload.size < expected:
+            raise ValueError(f"truncated YUV420 tensor: expected {expected} bytes, got {payload.size}")
+        return payload[:expected].reshape((height * 3 // 2, width))
+
     if tensor.is_nv12():
         width, height = dimension("width"), dimension("height")
-        payload = np.frombuffer(tensor.copy_payload_bytes(), dtype=np.uint8)
-        nv12 = payload[: width * height * 3 // 2].reshape((height * 3 // 2, width))
+        nv12 = planar_payload(width, height)
         return np.ascontiguousarray(cv2.cvtColor(nv12, cv2.COLOR_YUV2BGR_NV12))
     if tensor.is_i420():
         width, height = dimension("width"), dimension("height")
-        payload = np.frombuffer(tensor.copy_payload_bytes(), dtype=np.uint8)
-        i420 = payload[: width * height * 3 // 2].reshape((height * 3 // 2, width))
+        i420 = planar_payload(width, height)
         return np.ascontiguousarray(cv2.cvtColor(i420, cv2.COLOR_YUV2BGR_I420))
     frame = np.asarray(tensor.to_numpy(copy=True))
     if frame.ndim == 4 and frame.shape[0] == 1:
@@ -386,6 +395,8 @@ def _decode_pose_records(tensors, frame_size: tuple[int, int]):
         boxes = np.asarray(item.boxes.to_numpy(copy=True)).reshape((-1, 6))
         points = np.asarray(item.keypoints.to_numpy(copy=True)).reshape((-1, 17, 3))
         for box, pose in zip(boxes, points):
+            if box[2] <= box[0] or box[3] <= box[1] or not np.isfinite(box).all():
+                continue
             found = tuple((w.x, w.y, w.confidence) for w in wrists(pose))
             detections.append(
                 PersonDetection(tuple(float(v) for v in box[:4]), float(box[4]), found)
@@ -401,6 +412,15 @@ def _sample_clock(sample) -> tuple[int, str]:
 
 
 def _pose_metadata(records, track_ids: list[int] | None = None) -> str:
+    def keypoint(index, point):
+        x, y, confidence = (float(value) for value in point)
+        if not all(np.isfinite(value) for value in (x, y, confidence)):
+            x = y = confidence = 0.0
+        return {
+            "name": COCO_KEYPOINT_NAMES[index], "x": round(x), "y": round(y),
+            "confidence": round(max(0.0, min(confidence, 1.0)), 3),
+        }
+
     poses = []
     for index, (box, points) in enumerate(records, 1):
         poses.append({
@@ -412,13 +432,7 @@ def _pose_metadata(records, track_ids: list[int] | None = None) -> str:
                 round(max(0.0, float(box[2] - box[0]))),
                 round(max(0.0, float(box[3] - box[1]))),
             ],
-            "keypoints": [
-                {
-                    "name": COCO_KEYPOINT_NAMES[k], "x": round(float(x)),
-                    "y": round(float(y)), "confidence": round(float(confidence), 3),
-                }
-                for k, (x, y, confidence) in enumerate(points)
-            ],
+            "keypoints": [keypoint(k, point) for k, point in enumerate(points)],
         })
     return json.dumps({"poses": poses}, separators=(",", ":"))
 
@@ -523,6 +537,8 @@ def _validate_config(cfg: PerceptionConfig, width: int, height: int, fps: int) -
         raise ValueError("pose_fps must be between 1 and source FPS")
     if not 0 <= cfg.channel <= 3:
         raise ValueError("Insight channel must be in [0, 3]")
+    if not 1 <= cfg.video_port <= 65535 or not 1 <= cfg.metadata_port <= 65535:
+        raise ValueError("Insight ports must be in [1, 65535]")
     for name, value in (
         ("mask_iou", cfg.mask_iou), ("centroid_ratio", cfg.centroid_ratio),
         ("reacquire_ratio", cfg.reacquire_ratio),
@@ -546,6 +562,8 @@ def _write_metrics(
     path: Path, seg_count: int, pose_count: int, started: float, tracked: int,
     metadata_errors: int = 0, frame_write_errors: int = 0,
     track_write_drops: int = 0, track_write_errors: int = 0,
+    naming_vlm_calls: int = 0, naming_vlm_failures: int = 0,
+    naming_vlm_ms_p50: int = 0,
 ):
     elapsed = max(0.001, time.monotonic() - started)
     payload = {
@@ -555,6 +573,9 @@ def _write_metrics(
         "frame_write_errors": frame_write_errors,
         "track_write_drops": track_write_drops,
         "track_write_errors": track_write_errors,
+        "naming_vlm_calls": naming_vlm_calls,
+        "naming_vlm_failures": naming_vlm_failures,
+        "naming_vlm_ms_p50": naming_vlm_ms_p50,
     }
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
@@ -605,6 +626,7 @@ def run_perception(config_path: Path, root: Path) -> int:
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
     latest_people = []
+    latest_people_at = 0.0
     seg_count = pose_count = 0
     metadata_errors = 0
     metric_started = time.monotonic()
@@ -618,6 +640,7 @@ def run_perception(config_path: Path, root: Path) -> int:
                 latest_people, pose_records = _decode_pose_records(
                     _extract_tensors(pose_sample), (width, height)
                 )
+                latest_people_at = time.monotonic()
                 pose_tracks = processor.people.update(latest_people, time.time())
                 pts, frame_id = _sample_clock(pose_sample)
                 if not metadata.send_metadata(
@@ -636,6 +659,7 @@ def run_perception(config_path: Path, root: Path) -> int:
                         metrics_path, seg_count, pose_count, metric_started,
                         len(processor.objects.tracks), metadata_errors, writer.errors,
                         track_writer.dropped, track_writer.errors,
+                        *(namer.stats() if namer else (0, 0, 0)),
                     )
                     seg_count = pose_count = 0
                     metric_started = time.monotonic()
@@ -644,6 +668,8 @@ def run_perception(config_path: Path, root: Path) -> int:
             segment_tensors = _extract_tensors(_joined_field(sample, "segments", 1))
             frame = _tensor_bgr(frame_tensors[0])
             timestamp = time.time()
+            if time.monotonic() - latest_people_at > max(1.0, 3.0 / cfg.pose_fps):
+                latest_people = []
             frame_path = writer.submit(timestamp, frame)
             detections = [
                 detection
@@ -678,6 +704,7 @@ def run_perception(config_path: Path, root: Path) -> int:
                     metrics_path, seg_count, pose_count, metric_started,
                     len(processor.objects.tracks), metadata_errors, writer.errors,
                     track_writer.dropped, track_writer.errors,
+                    *(namer.stats() if namer else (0, 0, 0)),
                 )
                 seg_count = pose_count = 0
                 metric_started = time.monotonic()
