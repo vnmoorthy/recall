@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050505">
+  <title>Recall // Edge Visual Memory</title>
+  <link rel="preload" href="fonts/archivo-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/ibm-plex-mono-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg class="icon-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute">
+    <symbol id="i-gear" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="10" cy="10" r="2.6"/>
+      <path d="M10 2.2v2.1M10 15.7v2.1M2.2 10h2.1M15.7 10h2.1M4.5 4.5l1.5 1.5M14 14l1.5 1.5M4.5 15.5 6 14M14 6l1.5-1.5"/>
+    </symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter">
+      <path d="M4 12 12 4M6 4h6v6"/>
+    </symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter">
+      <path d="M2.5 8h10M8.5 3.5 13 8l-4.5 4.5"/>
+    </symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter">
+      <path d="M13.5 8h-10M7.5 3.5 3 8l4.5 4.5"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square">
+      <path d="M2.5 8.5l3.5 3.5 7.5-8"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square">
+      <path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 16 16" fill="currentColor" stroke="none">
+      <path d="M4 2.5v11l9-5.5z"/>
+    </symbol>
+    <symbol id="i-stop" viewBox="0 0 16 16" fill="currentColor" stroke="none">
+      <rect x="3.5" y="3.5" width="9" height="9"/>
+    </symbol>
+    <symbol id="i-replay" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter">
+      <path d="M13 8a5 5 0 1 1-1.5-3.6M12.5 2v3h-3"/>
+    </symbol>
+    <symbol id="i-mic" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="7" y="2.5" width="6" height="10" rx="3"/>
+      <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5M7.5 17.5h5"/>
+    </symbol>
+  </svg>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Recall home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">RECALL</span>
+      <span class="brand-subtitle">EDGE VISUAL MEMORY</span>
+    </a>
+    <div class="mission-id" aria-label="Deployment target">
+      <span>MISSION</span>
+      <strong>MODALIX // ROOM 01</strong>
+    </div>
+    <div class="status-group">
+      <span id="mode-badge" class="badge warning"><i></i>CONNECTING</span>
+      <span id="offline-badge" class="badge neutral"><i></i>LOCAL ONLY</span>
+      <button id="self-test-button" class="icon-button" type="button" title="Run system check" aria-label="Run system check"><svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-check"/></svg></button>
+      <button id="settings-button" class="icon-button" type="button" title="Connection settings" aria-label="Connection settings"><svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-gear"/></svg></button>
+    </div>
+  </header>
+
+  <section id="status-strip" class="status-strip" aria-label="Runtime telemetry">
+    <div><span>SEGMENTATION</span><strong id="seg-fps">0.0 FPS</strong></div>
+    <div><span>POSE</span><strong id="pose-fps">0.0 FPS</strong></div>
+    <div><span>OBJECT INDEX</span><strong id="object-count">0</strong></div>
+    <div><span>VLM CALLS</span><strong id="vlm-calls">0</strong></div>
+    <div><span>MEDIAN RESPONSE</span><strong id="vlm-latency">0 MS</strong></div>
+    <div><span>SPEECH SYSTEM</span><strong id="tts-status">STANDBY</strong></div>
+    <div class="model-stat"><span>RESIDENT MODEL</span><strong id="model-name" title="WAITING FOR LINK">WAITING FOR LINK</strong></div>
+  </section>
+
+  <main id="top">
+    <section class="workspace">
+      <div class="live-pane panel">
+        <div class="section-heading">
+          <div><span class="section-index">01</span><span id="perception-title" class="eyebrow">LIVE PERCEPTION</span></div>
+          <div class="scenario-tools">
+            <div class="feed-state"><i></i><span id="feed-state">ACQUIRING</span></div>
+            <button id="scenario-button" class="scenario-button" type="button"><span id="scenario-icon" aria-hidden="true"><svg class="icon" width="12" height="12"><use href="#i-play"/></svg></span><span id="scenario-action">RUN SCENARIO</span></button>
+          </div>
+        </div>
+        <div class="viewer-frame demo-mode" id="viewer-frame">
+          <iframe id="live-view" title="Recall live camera feed"></iframe>
+          <video id="demo-view" class="demo-view" src="assets/demo-desk.webm" poster="assets/scene-inventory.svg" autoplay muted loop playsinline aria-label="Local demonstration desk feed"></video>
+          <div id="viewer-fallback" class="viewer-fallback"><span>OPTICAL LINK</span><strong>CAMERA 01</strong><small>WAITING FOR VIDEO TRANSPORT</small></div>
+          <div id="scenario-alert" class="scenario-alert" aria-live="polite">
+            <span id="scenario-kicker">SIMULATION READY</span>
+            <strong id="scenario-message">FIVE OBJECTS INDEXED</strong>
+          </div>
+          <div id="scenario-progress" class="scenario-progress" aria-label="Demo scenario progress">
+            <span data-step="0">INDEX</span><span data-step="1">MUG</span><span data-step="2">LAPTOP</span><span data-step="3">SUMMARY</span>
+          </div>
+          <div class="feed-hud" aria-hidden="true"><span>CAM 01 // 640x480</span><time id="feed-clock">00:00:00 UTC</time></div>
+          <div class="reticle reticle-a" aria-hidden="true"></div>
+          <div class="reticle reticle-b" aria-hidden="true"></div>
+          <span class="corner corner-tl" aria-hidden="true"></span>
+          <span class="corner corner-tr" aria-hidden="true"></span>
+          <span class="corner corner-bl" aria-hidden="true"></span>
+          <span class="corner corner-br" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <aside class="ask-pane panel">
+        <div class="section-heading">
+          <div><span class="section-index">02</span><span class="eyebrow">MEMORY QUERY</span></div>
+          <span id="query-state" class="query-state">READY</span>
+        </div>
+        <h1>FIND WHAT<br>MOVED.</h1>
+        <form id="ask-form">
+          <label for="question">QUERY VISUAL MEMORY</label>
+          <div class="command-line">
+            <input id="question" name="question" autocomplete="off" value="Where is the red mug?" placeholder="ASK THE ROOM..." aria-label="Question">
+            <button id="mic-button" class="icon-button mic" type="button" title="Ask by voice" aria-label="Ask by voice" aria-pressed="false"><svg class="icon" width="18" height="18" aria-hidden="true"><use href="#i-mic"/></svg></button>
+            <button id="ask-button" class="send-button" type="submit">EXECUTE <svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></button>
+          </div>
+        </form>
+        <div class="quick-queries" aria-label="Suggested queries">
+          <button type="button" data-question="What's on the table?">INVENTORY</button>
+          <button type="button" data-question="Where is the red mug?">LOCATE MUG</button>
+          <button type="button" data-question="Who took my laptop?">CUSTODY</button>
+        </div>
+        <div class="response-block">
+          <div class="response-label"><span>RESPONSE</span><span id="evidence-count">0 EVIDENCE FRAMES</span></div>
+          <div id="answer" class="answer" aria-live="polite">Visual memory standing by.</div>
+          <div id="answer-snapshots" class="snapshot-grid"></div>
+        </div>
+        <button id="summary-button" class="secondary-button" type="button"><span>MISSION SUMMARY // LAST 10 MIN</span><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+      </aside>
+    </section>
+
+    <section class="memory-band">
+      <div class="inventory-pane panel">
+        <div class="section-heading memory-heading">
+          <div><span class="section-index">03</span><span class="eyebrow">OBJECT INDEX</span></div>
+          <span id="inventory-count">0 OBJECTS</span>
+        </div>
+        <div id="inventory" class="inventory-grid"></div>
+      </div>
+      <div class="timeline-pane panel">
+        <div class="section-heading memory-heading">
+          <div><span class="section-index">04</span><h2 id="timeline-title">EVENT LOG</h2></div>
+          <button id="all-events" class="text-button" type="button" hidden><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#i-arrow-left"/></svg>VIEW ALL</button>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settings-dialog">
+    <form method="dialog">
+      <div class="dialog-heading"><div><span>CONNECTION</span><h2>LINK CONFIGURATION</h2></div><button class="icon-button" type="submit" value="cancel" aria-label="Close"><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      <label>RECALL API<input id="api-url" value="http://10.42.0.232:8090"></label>
+      <label>INSIGHT VIEWER<input id="insight-url" value="https://10.42.0.1:8081/static/viewer.html?mode=light&amp;src=0&amp;max_channels=4"></label>
+      <button id="save-settings" class="send-button dialog-save" value="default">APPLY CONNECTION</button>
+    </form>
+  </dialog>
+  <dialog id="diagnostics-dialog" class="diagnostics-dialog">
+    <form method="dialog">
+      <div class="dialog-heading"><div><span>DIAGNOSTICS</span><h2>SYSTEM CHECK</h2></div><button class="icon-button" type="submit" value="cancel" aria-label="Close"><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+      <div class="diagnostic-summary"><span id="diagnostic-count">CHECKING</span><strong id="diagnostic-headline">VERIFYING PRODUCT PATHS</strong></div>
+      <div id="diagnostic-results" class="diagnostic-results" aria-live="polite"></div>
+      <button id="rerun-diagnostics" class="secondary-button" type="button"><span>RERUN SYSTEM CHECK</span><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#i-replay"/></svg></button>
+      <button class="send-button dialog-save" value="cancel">DONE</button>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>

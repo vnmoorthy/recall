@@ -15,3 +15,8 @@ media/crops/*
 models/*.tar.gz
 vendor/**/ui/assets/*.onnx
 vendor/**/ui/assets/piper-plus/
+
+# local-only files
+Sima/
+RECALL_BUILD_PROMPT.md
+.DS_Store

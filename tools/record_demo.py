@@ -179,7 +179,7 @@ def record(url: str, output: Path, browser_path: str | None) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--url", default="http://127.0.0.1:8080", help="served Recall UI URL")
+    parser.add_argument("--url", default="http://127.0.0.1:8080/app.html", help="served Recall UI URL")
     parser.add_argument("--output", type=Path, default=Path("demo/recall-product-demo.mp4"))
     parser.add_argument("--browser", default=os.getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE"))
     args = parser.parse_args()

@@ -1,131 +1,1033 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#050505">
-  <title>Recall // Edge Visual Memory</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recall</title>
+<meta name="description" content="Recall: Ctrl+F for the physical world. A single camera on a SiMa.ai Modalix DevKit remembers everything that happens in a room and answers questions out loud, entirely on-device.">
+<style>
+  @font-face{font-family:"Archivo"; font-style:normal; font-weight:400 900; font-stretch:62% 125%; font-display:swap;
+    src:url("./fonts/archivo-latin-variable.woff2") format("woff2-variations"), url("./fonts/archivo-latin-variable.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono"; font-style:normal; font-weight:400; font-display:swap; src:url("./fonts/ibm-plex-mono-latin-400.woff2") format("woff2")}
+  @font-face{font-family:"IBM Plex Mono"; font-style:normal; font-weight:600; font-display:swap; src:url("./fonts/ibm-plex-mono-latin-600.woff2") format("woff2")}
+  :root{
+    --ground:#050505; --panel:#0f1011; --panel-2:#141619;
+    --line:#292d31; --line-2:#4b5157;
+    --text:#f5f7f8; --muted:#8b9298;
+    --accent:#4ba3ff; --green:#54d68a; --amber:#f0b84b; --red:#ff4d42;
+    --cyan:#35d1e6; --magenta:#ff5fb0; --lime:#a6e05a; --orange:#ff9a3c; --violet:#a78bfa;
+    --sans:"Archivo", "Helvetica Neue", Arial, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --gutter:clamp(16px, 4vw, 40px);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth; background:var(--ground)}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{
+    margin:0; background:var(--ground); color:var(--text);
+    font-family:var(--sans); font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    font-variant-numeric:tabular-nums;
+  }
+  h1,h2,h3,h4,p,ul,ol,figure{margin:0}
+  ul,ol{padding:0; list-style:none}
+  a{color:inherit; text-decoration:none}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+  svg.scene{display:block; width:100%; max-width:100%; height:auto; background:var(--ground)}
+  .wrap{max-width:1200px; margin-inline:auto; padding-inline:var(--gutter)}
+  .mono{font-family:var(--mono)}
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--muted); line-height:1.6;
+  }
+  .eyebrow::before{content:""; display:inline-block; width:18px; height:2px; background:var(--accent); vertical-align:middle; margin-right:12px}
+  .eyebrow b{color:var(--text); font-weight:600}
+  section{padding-block:clamp(56px, 8vw, 104px); border-top:1px solid var(--line); scroll-margin-top:64px}
+  .sec-head{display:grid; gap:16px; margin-bottom:clamp(32px, 4vw, 48px); max-width:760px}
+  .sec-head h2{
+    font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:clamp(28px, 4vw, 40px);
+    line-height:.98; letter-spacing:-.015em; text-wrap:balance;
+  }
+  .sec-head p{font-size:18px; color:var(--muted); max-width:64ch}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; height:44px; padding-inline:18px;
+    font-family:var(--mono); font-size:13px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    border:1px solid var(--line-2); color:var(--text); white-space:nowrap; transition:background .15s, border-color .15s, color .15s;
+  }
+  .btn svg{width:14px; height:14px; flex:none}
+  .btn:hover{border-color:var(--text)}
+  .btn-primary{background:var(--text); color:var(--ground); border-color:var(--text)}
+  .btn-primary:hover{background:var(--accent); border-color:var(--accent); color:var(--ground)}
+  .btn-sm{height:36px; padding-inline:14px; font-size:11px}
+
+  /* ---------- top bar ---------- */
+  .top{position:sticky; top:0; z-index:10; background:var(--ground); border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex; align-items:center; justify-content:space-between; height:64px; gap:16px}
+  .brand{display:inline-flex; align-items:center; gap:12px; font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:18px; letter-spacing:.14em}
+  .mark{position:relative; width:27px; height:18px; border:2px solid var(--text); border-right:0; transform:skewX(-18deg); flex:none}
+  .mark::after{content:""; position:absolute; left:4px; top:5px; width:18px; height:2px; background:var(--text)}
+  .nav{display:flex; align-items:center; gap:28px; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+  .nav a:hover{color:var(--text)}
+  .nav .links{display:flex; gap:28px}
+  @media (max-width:720px){ .nav .links{display:none} }
+
+  /* ---------- hero ---------- */
+  .hero{padding-block:clamp(48px, 7vw, 96px) clamp(56px, 8vw, 104px); border-top:0}
+  .hero-in{display:grid; gap:28px}
+  .hero h1{
+    font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:clamp(44px, 8.6vw, 96px);
+    line-height:.95; letter-spacing:-.025em; text-wrap:balance; max-width:14ch;
+  }
+  .hero h1 .kbd{color:var(--accent)}
+  .hero-row{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:32px; align-items:end}
+  .hero-row p{font-size:18px; color:var(--muted); max-width:58ch}
+  .hero-row p b{color:var(--text); font-weight:400}
+  .actions{display:flex; gap:12px; flex-wrap:wrap}
+  @media (max-width:820px){ .hero-row{grid-template-columns:1fr} }
+  .motion{transition:transform .9s cubic-bezier(.2,.7,.2,1), opacity .9s ease}
+  @media (prefers-reduced-motion: no-preference){
+    .motion{transform:translateY(14px); opacity:.5}
+    .fonts-in .motion{transform:none; opacity:1}
+  }
+
+  /* framed image with corner brackets */
+  .frame{position:relative; padding:12px; background:var(--panel)}
+  .frame::before,.frame::after{content:""; position:absolute; inset:0; pointer-events:none}
+  .frame::before{
+    background:
+      linear-gradient(var(--text),var(--text)) 0 0/22px 2px no-repeat,
+      linear-gradient(var(--text),var(--text)) 0 0/2px 22px no-repeat,
+      linear-gradient(var(--text),var(--text)) 100% 0/22px 2px no-repeat,
+      linear-gradient(var(--text),var(--text)) 100% 0/2px 22px no-repeat,
+      linear-gradient(var(--text),var(--text)) 0 100%/22px 2px no-repeat,
+      linear-gradient(var(--text),var(--text)) 0 100%/2px 22px no-repeat,
+      linear-gradient(var(--text),var(--text)) 100% 100%/22px 2px no-repeat,
+      linear-gradient(var(--text),var(--text)) 100% 100%/2px 22px no-repeat;
+    opacity:.85;
+  }
+  .frame .scene{border:1px solid var(--line)}
+  .caption{
+    margin-top:1px; background:var(--panel-2); border:1px solid var(--line);
+    font-family:var(--mono); font-size:13px; line-height:1.5; display:grid;
+  }
+  .caption > div{display:grid; grid-template-columns:28px 1fr; gap:12px; padding:12px 16px}
+  .caption > div + div{border-top:1px solid var(--line)}
+  .caption .k{font-weight:600; color:var(--accent)}
+  .caption .a .k{color:var(--green)}
+  .caption .q{color:var(--muted)}
+  .hero-meta{display:flex; gap:24px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:16px}
+  .hero-meta span b{color:var(--text); font-weight:600}
+
+  /* ---------- Q&A ---------- */
+  .qa{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line)}
+  .qa article{background:var(--panel); padding:24px; display:grid; gap:16px; align-content:start}
+  .qa .q{font-family:var(--mono); font-size:13px; font-weight:600; display:grid; grid-template-columns:20px 1fr; gap:10px}
+  .qa .q span:first-child{color:var(--accent)}
+  .qa .ans{font-size:18px; line-height:1.4; text-wrap:pretty}
+  .qa .ans b{font-weight:400; color:var(--text)}
+  .chip{
+    display:inline-flex; align-items:center; gap:8px; height:26px; padding-inline:10px; border:1px solid var(--line-2);
+    font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--muted); justify-self:start;
+  }
+  .chip::before{content:""; width:6px; height:6px; background:var(--green)}
+  @media (max-width:900px){ .qa{grid-template-columns:1fr} }
+
+  /* ---------- never leaves ---------- */
+  .split{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:clamp(32px, 5vw, 80px); align-items:start}
+  .split .lede{font-size:clamp(20px, 2.2vw, 24px); line-height:1.35; letter-spacing:-.01em; text-wrap:pretty}
+  .split .lede + p{margin-top:20px; color:var(--muted); font-size:15px; max-width:56ch}
+  .stark{border-top:1px solid var(--line-2)}
+  .stark li{display:grid; grid-template-columns:24px 1fr; gap:16px; padding:18px 0; border-bottom:1px solid var(--line); font-family:var(--sans); font-size:18px; line-height:1.3}
+  .stark li::before{content:""; width:8px; height:8px; margin-top:8px; background:var(--green)}
+  .stark li:last-child::before{background:var(--amber)}
+  .stark li small{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px}
+  @media (max-width:820px){ .split{grid-template-columns:1fr} }
+
+  /* ---------- how ---------- */
+  .steps{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line)}
+  .step{background:var(--panel); padding:24px; display:grid; gap:14px; align-content:start; position:relative}
+  .step .n{font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; color:var(--accent); display:flex; justify-content:space-between; align-items:center}
+  .step .n svg{width:20px; height:10px; color:var(--line-2)}
+  .step h3{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:24px; line-height:1; letter-spacing:-.01em}
+  .step p{color:var(--muted); font-size:15px}
+  .rule{background:var(--panel-2); border:1px solid var(--line); padding:12px 14px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--text)}
+  .rule div{display:grid; grid-template-columns:auto 1fr; gap:12px}
+  .rule div span:first-child{color:var(--muted)}
+  .rule div span:last-child{text-align:right}
+  .pose{width:100%; height:auto; display:block; margin-top:4px}
+  @media (max-width:1000px){ .steps{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:560px){ .steps{grid-template-columns:1fr} }
+
+  .jobs-head{display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin:48px 0 16px; flex-wrap:wrap}
+  .jobs-head h3{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:24px; letter-spacing:-.01em}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line)}
+  table{width:100%; border-collapse:collapse; min-width:640px}
+  th,td{text-align:left; vertical-align:top; padding:14px 16px; border-bottom:1px solid var(--line)}
+  th{font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); background:var(--panel-2)}
+  tbody tr:last-child td{border-bottom:0}
+  td.model{font-family:var(--mono); font-size:13px; font-weight:600; white-space:nowrap}
+  td.model i{display:inline-block; width:8px; height:8px; margin-right:10px; vertical-align:0}
+  td.runs{font-family:var(--mono); font-size:13px; color:var(--muted); white-space:nowrap}
+  td.job{font-size:15px}
+  .note{margin-top:16px; font-family:var(--mono); font-size:13px; color:var(--muted); max-width:80ch}
+
+  /* ---------- numbers ---------- */
+  .stats{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line)}
+  .stat{background:var(--panel); padding:20px 20px 22px; display:grid; gap:10px; align-content:start}
+  .stat .l{font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--text)}
+  .stat .v{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:40px; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .stat .v small{font-family:var(--mono); font-size:13px; font-weight:400; color:var(--muted); margin-left:6px; letter-spacing:0}
+  .stat .d{font-size:13px; color:var(--muted)}
+  @media (max-width:1000px){ .stats{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @media (max-width:560px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .stat .v{font-size:32px} }
+  .foot-note{display:grid; grid-template-columns:auto 1fr; gap:12px; margin-top:16px; font-family:var(--mono); font-size:13px; color:var(--muted); max-width:90ch}
+  .foot-note span:first-child{color:var(--amber)}
+
+  /* ---------- demo ---------- */
+  .beats{display:grid; gap:0}
+  .beat{display:grid; grid-template-columns:56px minmax(0,1fr) minmax(0,1.15fr); gap:0 32px; padding:32px 0; border-top:1px solid var(--line); position:relative}
+  .beat:last-child{border-bottom:1px solid var(--line)}
+  .beat .m{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--accent); position:relative}
+  .beat .m::after{content:""; position:absolute; left:6px; top:28px; bottom:-32px; width:1px; background:var(--line-2)}
+  .beat:last-child .m::after{display:none}
+  .beat .m span{display:inline-block; width:13px; height:13px; border:2px solid var(--accent); background:var(--ground); margin-right:10px; vertical-align:-2px}
+  .beat .t{display:grid; gap:12px; align-content:start}
+  .beat h3{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:24px; line-height:1; letter-spacing:-.01em; text-wrap:balance}
+  .beat .say{font-family:var(--mono); font-size:13px; color:var(--text); background:var(--panel-2); border:1px solid var(--line); padding:10px 14px; display:grid; grid-template-columns:20px 1fr; gap:10px}
+  .beat .say span:first-child{color:var(--accent); font-weight:600}
+  .beat p{color:var(--muted)}
+  .beat .pic{padding:8px; background:var(--panel); border:1px solid var(--line); align-self:start}
+  .beat .pic + figcaption{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:8px}
+  .beat.noimg .t{grid-column:2 / span 2}
+  .beat .tag{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--amber)}
+  @media (max-width:820px){
+    .beat{grid-template-columns:40px minmax(0,1fr)}
+    .beat figure{grid-column:2; margin-top:20px}
+    .beat.noimg .t{grid-column:2}
+    .beat .m::after{bottom:-32px}
+  }
+
+  /* ---------- where ---------- */
+  .tiles{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line)}
+  .tile{background:var(--panel); padding:24px; display:grid; gap:12px; align-content:start; border-top:2px solid var(--c, var(--line-2))}
+  .tile h3{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:24px; line-height:1; letter-spacing:-.01em}
+  .tile p{color:var(--muted)}
+  .tile .ask{font-family:var(--mono); font-size:13px; color:var(--text)}
+  .tile .ask::before{content:"Q  "; color:var(--accent); font-weight:600}
+  @media (max-width:1000px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:560px){ .tiles{grid-template-columns:1fr} }
+  .roadmap{margin-top:48px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:24px 48px; align-items:start}
+  .roadmap h3{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:24px; letter-spacing:-.01em}
+  .roadmap ul{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 32px; border-top:1px solid var(--line-2)}
+  .roadmap li{padding:14px 0; border-bottom:1px solid var(--line); display:grid; grid-template-columns:auto 1fr; gap:14px; font-size:15px}
+  .roadmap li span{font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--muted); padding-top:4px}
+  @media (max-width:820px){ .roadmap{grid-template-columns:1fr} .roadmap ul{grid-template-columns:1fr} }
+
+  .cta{margin-top:clamp(56px, 8vw, 96px); border:1px solid var(--line-2); background:var(--panel); padding:clamp(28px, 4vw, 48px); display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px 48px; align-items:center}
+  .cta .actions{flex-direction:column; align-items:stretch}
+  @media (max-width:820px){ .cta .actions{flex-direction:row} }
+  .cta h2{font-family:var(--sans); font-weight:900; font-stretch:112%; font-size:clamp(32px, 5vw, 64px); line-height:.95; letter-spacing:-.025em; text-wrap:balance}
+  .cta p{margin-top:12px; color:var(--muted); font-size:18px; max-width:48ch}
+  .cta code{font-family:var(--mono); font-size:13px; color:var(--text)}
+  @media (max-width:820px){ .cta{grid-template-columns:1fr} }
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--line); padding-block:32px}
+  footer .wrap{display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  footer a{color:var(--text); border-bottom:1px solid var(--line-2)}
+  footer a:hover{border-color:var(--text)}
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="Recall home">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-name">RECALL</span>
-      <span class="brand-subtitle">EDGE VISUAL MEMORY</span>
-    </a>
-    <div class="mission-id" aria-label="Deployment target">
-      <span>MISSION</span>
-      <strong>MODALIX // ROOM 01</strong>
-    </div>
-    <div class="status-group">
-      <span id="mode-badge" class="badge warning"><i></i>CONNECTING</span>
-      <span id="offline-badge" class="badge neutral">LOCAL ONLY</span>
-      <button id="self-test-button" class="icon-button" title="Run system check" aria-label="Run system check"><span aria-hidden="true">&#10003;</span></button>
-      <button id="settings-button" class="icon-button" title="Connection settings" aria-label="Connection settings"><span aria-hidden="true">&#9881;</span></button>
-    </div>
-  </header>
 
-  <section id="status-strip" class="status-strip" aria-label="Runtime telemetry">
-    <div><span>SEGMENTATION</span><strong id="seg-fps">0.0 FPS</strong></div>
-    <div><span>POSE</span><strong id="pose-fps">0.0 FPS</strong></div>
-    <div><span>OBJECT INDEX</span><strong id="object-count">0</strong></div>
-    <div><span>VLM CALLS</span><strong id="vlm-calls">0</strong></div>
-    <div><span>MEDIAN RESPONSE</span><strong id="vlm-latency">0 MS</strong></div>
-    <div><span>SPEECH SYSTEM</span><strong id="tts-status">STANDBY</strong></div>
-    <div class="model-stat"><span>RESIDENT MODEL</span><strong id="model-name">WAITING FOR LINK</strong></div>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Recall home"><span class="mark" aria-hidden="true"></span>RECALL</a>
+    <nav class="nav" aria-label="Sections">
+      <div class="links">
+        <a href="#how">How it works</a>
+        <a href="#numbers">Numbers</a>
+        <a href="#demo">Demo</a>
+        <a href="https://github.com/vnmoorthy/recall" rel="noopener">GitHub</a>
+      </div>
+      <a class="btn btn-sm btn-primary" href="./app.html">Launch the live demo
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-in">
+      <p class="eyebrow motion">Edge visual memory &middot; <b>SiMa.ai Modalix</b> &middot; &lt; 10 W</p>
+      <h1 class="motion"><span class="kbd">Ctrl+F</span> for the physical&nbsp;world.</h1>
+      <div class="hero-row motion">
+        <p>One camera on a Modalix DevKit remembers everything that happens in a room and answers out loud, with the snapshot and the moment. <b>Nothing leaves the board.</b></p>
+        <div class="actions">
+          <a class="btn btn-primary" href="./app.html">Launch the live demo
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          <a class="btn" href="https://github.com/vnmoorthy/recall" rel="noopener">View on GitHub
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+        </div>
+      </div>
+      <figure class="motion">
+        <div class="frame">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" class="scene" role="img" aria-label="Recall attribution view: a person in a blue shirt lifts the red mug; the left wrist is within 41 px of the mug mask, so the pickup is attributed to that person">
+  <defs>
+    <radialGradient id="vig-hero" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#15181c"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+    <pattern id="grid-hero" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="720" fill="url(#vig-hero)"/>
+  <rect width="1280" height="720" fill="url(#grid-hero)"/>
+  <polygon points="250,300 1030,300 1170,650 110,650" fill="#171a1e" stroke="#2a2f35" stroke-width="1.5"/>
+  <polygon points="250,300 1030,300 1040,312 240,312" fill="#1f242a"/>
+  <line x1="110" y1="650" x2="1170" y2="650" stroke="#0b0d0f" stroke-width="4"/>
+  <g>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#2c3036"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#20242a" stroke="#3a4048"/>
+    <rect x="360" y="340" width="218" height="122" rx="2" fill="#11151a"/>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#ff5fb0" fill-opacity=".26" stroke="#ff5fb0" stroke-width="1.6"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#ff5fb0" fill-opacity=".22" stroke="#ff5fb0" stroke-width="1.6"/>
+    <line x1="352" y1="332" x2="330" y2="300" stroke="#ff5fb0" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(200,276)">
+      <rect width="230" height="24" fill="#0a0b0d" stroke="#ff5fb0" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff5fb0"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#2 SILVER LAPTOP</text>
+      <text x="168" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff5fb0">.94</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g transform="translate(-6,-34)">
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#5a1d1d"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#5a1d1d" stroke-width="10"/>
+    <ellipse cx="735" cy="502" rx="35" ry="8" fill="#7a2a2a"/>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#35d1e6" fill-opacity=".26" stroke="#35d1e6" stroke-width="1.6"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#35d1e6" stroke-width="1.6"/>
+    <line x1="735" y1="500" x2="735" y2="462" stroke="#35d1e6" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(560,438)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#35d1e6" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#35d1e6"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#3 RED CERAMIC MUG</text>
+      <text x="188" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#35d1e6">.91</text>
+      <text x="216" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#f0b84b">CAR</text>
+    </g>
+  </g>
+  <g>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#1f4a2c"/>
+    <rect x="878" y="366" width="20" height="26" rx="4" fill="#1f4a2c"/>
+    <rect x="875" y="356" width="26" height="14" rx="3" fill="#2f6b40"/>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <rect x="875" y="356" width="26" height="36" rx="4" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <line x1="888" y1="356" x2="888" y2="326" stroke="#a6e05a" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(806,302)">
+      <rect width="262" height="24" fill="#0a0b0d" stroke="#a6e05a" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a6e05a"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#1 GREEN WATER BOTTLE</text>
+      <text x="200" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a6e05a">.96</text>
+      <text x="228" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#0e0f11" stroke="#2c3036"/>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#ff9a3c" fill-opacity=".26" stroke="#ff9a3c" stroke-width="1.6"/>
+    <line x1="659" y1="616" x2="659" y2="646" stroke="#ff9a3c" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(548,646)">
+      <rect width="236" height="24" fill="#0a0b0d" stroke="#ff9a3c" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff9a3c"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#4 BLACK CELL PHONE</text>
+      <text x="176" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff9a3c">.88</text>
+      <text x="204" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#1e2a5a"/>
+    <polygon points="950,478 962,478 950,556 938,556" fill="#16204a"/>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#a78bfa" fill-opacity=".24" stroke="#a78bfa" stroke-width="1.6"/>
+    <line x1="1014" y1="556" x2="1014" y2="586" stroke="#a78bfa" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(892,586)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#a78bfa" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a78bfa"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#5 BLUE HARDCOVER BOOK</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a78bfa">.90</text>
+      <text x="224" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+<rect x="860" y="96" width="290" height="370" fill="#4ba3ff" fill-opacity=".06" stroke="#4ba3ff" stroke-width="1.2" stroke-dasharray="6 4"/>
+<line x1="935" y1="200" x2="1045" y2="202" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="935" y1="200" x2="855" y2="296" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="855" y1="296" x2="748" y2="472" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="1045" y1="202" x2="1088" y2="312" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="1088" y1="312" x2="1098" y2="404" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="935" y1="200" x2="945" y2="392" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="1045" y1="202" x2="1035" y2="394" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="945" y1="392" x2="1035" y2="394" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="990" y1="128" x2="935" y2="200" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="990" y1="128" x2="1045" y2="202" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="990" cy="128" r="7" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="935" cy="200" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="1045" cy="202" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="855" cy="296" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="748" cy="472" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="1088" cy="312" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="1098" cy="404" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="945" cy="392" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="1035" cy="394" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="748" cy="472" r="16" fill="none" stroke="#f0b84b" stroke-width="2"/>
+<circle cx="748" cy="472" r="60" fill="none" stroke="#f0b84b" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="748" y1="472" x2="729" y2="502" stroke="#f0b84b" stroke-width="1.5"/>
+<circle cx="729" cy="502" r="3" fill="#f0b84b"/>
+<g transform="translate(900,72)"><rect width="252" height="24" fill="#0a0b0d" stroke="#4ba3ff" stroke-opacity=".7"/><rect width="4" height="24" fill="#4ba3ff"/><text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">P1 PERSON IN BLUE SHIRT</text><text x="226" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#4ba3ff">.97</text></g>
+</g>
+<g transform="translate(480,556)"><rect width="302" height="24" fill="#0a0b0d" stroke="#f0b84b"/><rect width="4" height="24" fill="#f0b84b"/><text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f0b84b">L WRIST → #3 · 41 PX · 0.8 S · PICKED UP</text></g>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#8b9298">
+    <text x="28" y="36" fill="#f5f7f8">CAM 01</text>
+    <text x="88" y="36">1280×720 · H.264 · CH0</text>
+    <text x="1252" y="36" text-anchor="end">10:47:45 UTC</text>
+    <text x="28" y="696">SEG <tspan fill="#54d68a">LIVE</tspan>   POSE <tspan fill="#54d68a">LIVE</tspan>   VLM <tspan fill="#f0b84b">NAMING</tspan></text>
+    <text x="1252" y="696" text-anchor="end">OBJECTS <tspan fill="#f5f7f8">5</tspan>   PERSONS <tspan fill="#f5f7f8">1</tspan>   MODALIX · NO CLOUD</text>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".55" stroke-width="1.5" fill="none">
+    <path d="M16 48 V16 H48"/><path d="M1232 16 H1264 V48"/><path d="M16 672 V704 H48"/><path d="M1264 672 V704 H1232"/>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".35" fill="none">
+    <path d="M180 200 h20 M190 190 v20"/><path d="M1100 470 h20 M1110 460 v20"/>
+  </g>
+</svg>
+        </div>
+        <figcaption class="caption">
+          <div class="qq"><span class="k">Q</span><span class="q">Where is the red mug?</span></div>
+          <div class="a"><span class="k">A</span><span>The person in the blue shirt picked up the red ceramic mug at 10:47:45 and moved right. It is now marked missing.</span></div>
+        </figcaption>
+        <div class="hero-meta">
+          <span>Evidence <b>event #8</b></span>
+          <span>Snapshot <b>10:47:45</b></span>
+          <span>Attribution <b>L wrist &middot; 41 px</b></span>
+          <span>Link <b>local only</b></span>
+        </div>
+      </figure>
+    </div>
   </section>
 
-  <main id="top">
-    <section class="workspace">
-      <div class="live-pane">
-        <div class="section-heading">
-          <div><span class="section-index">01</span><span id="perception-title" class="eyebrow">LIVE PERCEPTION</span></div>
-          <div class="scenario-tools">
-            <div class="feed-state"><i></i><span id="feed-state">ACQUIRING</span></div>
-            <button id="scenario-button" class="scenario-button" type="button"><span id="scenario-icon" aria-hidden="true">&#9654;</span><span id="scenario-action">RUN SCENARIO</span></button>
-          </div>
+  <section id="ask">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Ask it anything about the room</p>
+        <h2>Plain questions. Answers with a snapshot and a timestamp.</h2>
+        <p>Every answer is generated over the evidence Recall actually recorded, cites the event it came from, and is checked for timestamp grounding before it is spoken.</p>
+      </div>
+      <div class="qa">
+        <article>
+          <div class="q"><span>Q</span><span>What's on the table?</span></div>
+          <p class="ans">Five objects: a green water bottle, a silver laptop, a red ceramic mug, a black cell phone and a blue hardcover book. All stationary since 10:44.</p>
+          <span class="chip">1 snapshot &middot; events #1&ndash;#5</span>
+        </article>
+        <article>
+          <div class="q"><span>Q</span><span>Where's my red mug?</span></div>
+          <p class="ans">Last seen at 10:47:47. The person in the blue shirt picked it up at 10:47:45 and moved right, out of frame. It has not come back.</p>
+          <span class="chip">2 snapshots &middot; event #8</span>
+        </article>
+        <article>
+          <div class="q"><span>Q</span><span>Who took the laptop?</span></div>
+          <p class="ans">The person in the blue shirt. Their right wrist was 28 px from the laptop at 10:50:45 when it moved, then left the frame to the left.</p>
+          <span class="chip">1 snapshot &middot; event #12</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="local">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Never leaves the room</p>
+        <h2>Continuous visual memory can only exist on-device.</h2>
+      </div>
+      <div class="split">
+        <div>
+          <p class="lede">Nobody will stream a live feed of their home, a hospital ward, a lab or a stockroom to a server. So a camera that remembers everything cannot be a cloud product. It has to run where the video is, and the video has to stay there.</p>
+          <p>Recall keeps video, names, questions and speech on the local link. The runtime has no cloud client and the UI has zero CDN. The internet cable can be pulled mid-demo and it keeps working, because nothing was going over it in the first place.</p>
         </div>
-        <div class="viewer-frame demo-mode" id="viewer-frame">
-          <iframe id="live-view" title="Recall live camera feed"></iframe>
-          <video id="demo-view" class="demo-view" src="assets/demo-desk.webm" poster="assets/scene-inventory.jpg" autoplay muted loop playsinline aria-label="Local demonstration desk feed"></video>
-          <div id="viewer-fallback" class="viewer-fallback"><span>OPTICAL LINK</span><strong>CAMERA 01</strong><small>WAITING FOR VIDEO TRANSPORT</small></div>
-          <div id="scenario-alert" class="scenario-alert" aria-live="polite">
-            <span id="scenario-kicker">SIMULATION READY</span>
-            <strong id="scenario-message">FIVE OBJECTS INDEXED</strong>
+        <ul class="stark">
+          <li><div>No cloud client<small>The runtime cannot reach a server</small></div></li>
+          <li><div>Zero CDN<small>Every byte of the UI ships from the board</small></div></li>
+          <li><div>Frames kept 15 minutes, then deleted<small>1 fps snapshots, nothing archived</small></div></li>
+          <li><div>People described by clothing only<small>"Person in the blue shirt", never an identity</small></div></li>
+          <li><div>Unplug the cable and it keeps answering<small>Demo beat 4</small></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">How it remembers</p>
+        <h2>See, track, attribute, answer. One chip does all of it.</h2>
+        <p>The vision-language model is never on the frame path. Stop it and tracking still runs; the memory keeps filling.</p>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <div class="n">01 &middot; See <svg viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M0 5h18M14 1l4 4-4 4"/></svg></div>
+          <h3>Segment every frame</h3>
+          <p>YOLO26 instance segmentation turns each frame into an inventory of objects with pixel masks. Every object gets a stable ID and a state.</p>
+          <div class="rule">
+            <div><span>model</span><span>YOLO26 seg</span></div>
+            <div><span>rate</span><span>every frame</span></div>
+            <div><span>output</span><span>masks + IDs</span></div>
           </div>
-          <div id="scenario-progress" class="scenario-progress" aria-label="Demo scenario progress">
-            <span data-step="0">INDEX</span><span data-step="1">MUG</span><span data-step="2">LAPTOP</span><span data-step="3">SUMMARY</span>
+        </li>
+        <li class="step">
+          <div class="n">02 &middot; Track <svg viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M0 5h18M14 1l4 4-4 4"/></svg></div>
+          <h3>Keep identity through time</h3>
+          <p>A tracker matches masks frame to frame so the mug that moves is still #3. Objects settle, go missing and come back without losing their ID.</p>
+          <div class="rule">
+            <div><span>match</span><span>same class, mask IoU &gt; 0.30</span></div>
+            <div><span>or</span><span>centroid &lt; 5 % frame width</span></div>
+            <div><span>stationary</span><span>after 3 s</span></div>
+            <div><span>missing</span><span>after 2 s</span></div>
+            <div><span>reacquire</span><span>within 60 s</span></div>
           </div>
-          <div class="feed-hud" aria-hidden="true"><span>CAM 01 // 640x480</span><time id="feed-clock">00:00:00 UTC</time></div>
-          <div class="reticle reticle-a" aria-hidden="true"></div>
-          <div class="reticle reticle-b" aria-hidden="true"></div>
+        </li>
+        <li class="step">
+          <div class="n">03 &middot; Attribute <svg viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M0 5h18M14 1l4 4-4 4"/></svg></div>
+          <h3>Whose hand was on it</h3>
+          <p>YOLO26 pose finds wrists at 10 fps. An object that moves or goes missing while a wrist was within 60 px of its mask in the last 1.5 s is a pickup by that person.</p>
+          <svg class="pose" viewBox="0 0 260 120" role="img" aria-label="Diagram: a wrist keypoint with a dashed 60 pixel radius touching an object mask">
+            <rect width="260" height="120" fill="#141619" stroke="#292d31"/>
+            <rect x="150" y="52" width="70" height="46" fill="#35d1e6" fill-opacity=".26" stroke="#35d1e6" stroke-width="1.5"/>
+            <text x="150" y="44" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="10" fill="#35d1e6">#3 MASK</text>
+            <line x1="40" y1="30" x2="82" y2="52" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="82" y1="52" x2="118" y2="72" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="40" cy="30" r="4" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+            <circle cx="82" cy="52" r="4" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+            <circle cx="118" cy="72" r="60" fill="none" stroke="#f0b84b" stroke-opacity=".4" stroke-width="1" stroke-dasharray="3 4"/>
+            <circle cx="118" cy="72" r="9" fill="none" stroke="#f0b84b" stroke-width="2"/>
+            <circle cx="118" cy="72" r="3" fill="#f0b84b"/>
+            <line x1="127" y1="72" x2="150" y2="72" stroke="#f0b84b" stroke-width="1.5"/>
+            <text x="14" y="108" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="10" fill="#f0b84b">WRIST &rarr; #3 &middot; &lt; 60 PX &middot; &lt; 1.5 S</text>
+          </svg>
+        </li>
+        <li class="step">
+          <div class="n">04 &middot; Answer</div>
+          <h3>Grounded in evidence</h3>
+          <p>Events (appeared, moved, picked up, put down, missing, person entered or left with exit direction) land in SQLite. A question pulls a compact evidence JSON; Qwen3-VL-4B answers over it, citing event IDs.</p>
+          <div class="rule">
+            <div><span>name</span><span>&le; 5 words, with color</span></div>
+            <div><span>people</span><span>clothing only</span></div>
+            <div><span>check</span><span>timestamp grounding</span></div>
+            <div><span>voice</span><span>Whisper in, Piper out</span></div>
+          </div>
+        </li>
+      </ol>
+
+      <div class="jobs-head">
+        <h3>One chip, seven jobs</h3>
+        <span class="mono" style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)">Modalix MLSoC &middot; under 10 W</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Model</th><th scope="col">Runs</th><th scope="col">Job</th></tr></thead>
+          <tbody>
+            <tr><td class="model"><i style="background:var(--cyan)"></i>YOLO26 seg</td><td class="runs">every frame</td><td class="job">Object inventory with pixel masks and stable IDs</td></tr>
+            <tr><td class="model"><i style="background:var(--accent)"></i>YOLO26 pose</td><td class="runs">10 fps</td><td class="job">Wrist keypoints for pickup attribution</td></tr>
+            <tr><td class="model"><i style="background:var(--lime)"></i>Tracker</td><td class="runs">every frame</td><td class="job">Identity through time: appeared, moved, stationary, missing, reacquired</td></tr>
+            <tr><td class="model"><i style="background:var(--magenta)"></i>Qwen3-VL-4B &middot; vision</td><td class="runs">once per new object or person, off the frame path</td><td class="job">Names each object in &le; 5 words with its color; each person by clothing only</td></tr>
+            <tr><td class="model"><i style="background:var(--violet)"></i>Qwen3-VL-4B &middot; text</td><td class="runs">per question</td><td class="job">Answers over the evidence JSON, cites event IDs, checked for timestamp grounding</td></tr>
+            <tr><td class="model"><i style="background:var(--orange)"></i>Whisper Small</td><td class="runs">per spoken question, on the MLA</td><td class="job">Speech to text</td></tr>
+            <tr><td class="model"><i style="background:var(--amber)"></i>Piper</td><td class="runs">per answer</td><td class="job">Text to speech</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Qwen3-VL-4B runs through SiMa LLiMa and is used twice: once to name what the camera sees, and again in text mode to answer. Stop it and steps 01 to 03 keep running.</p>
+    </div>
+  </section>
+
+  <section id="numbers">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Measured on the board</p>
+        <h2>Real latencies from the DevKit, not a spec sheet.</h2>
+        <p>Recorded 2026-09-16 on a Modalix DevKit. Test suite: 40 passed.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="v">0.59<small>s</small></span><span class="l">VLM crop naming</span><span class="d">one object, once</span></div>
+        <div class="stat"><span class="v">2.67<small>s</small></span><span class="l">Custody question with snapshots</span><span class="d">"Who took the laptop?"</span></div>
+        <div class="stat"><span class="v">6.23<small>s</small></span><span class="l">Three-sentence summary</span><span class="d">"What happened here?"</span></div>
+        <div class="stat"><span class="v">3.77<small>s</small></span><span class="l">Whisper transcription + answer</span><span class="d">spoken question, end to end</span></div>
+        <div class="stat"><span class="v">0.54<small>s</small></span><span class="l">Piper speech</span><span class="d">answer to audio</span></div>
+        <div class="stat"><span class="v">32.8<small>tok/s</small></span><span class="l">Text generation</span><span class="d">answer mode</span></div>
+      </div>
+      <p class="foot-note"><span>*</span><span>Measured with a fallback VLM while the exact Qwen package awaited a SiMa login. Segmentation and pose FPS with the exact archives: pending.</span></p>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">The demo</p>
+        <h2>Five questions, one table, no internet.</h2>
+        <p>The whole demo happens on a table in front of the camera. The judges are the people in the memory.</p>
+      </div>
+      <ol class="beats">
+        <li class="beat">
+          <div class="m"><span aria-hidden="true"></span>1</div>
+          <div class="t">
+            <h3>Take inventory</h3>
+            <div class="say"><span>Q</span><span>What's on the table?</span></div>
+            <p>Five objects, each with a mask, a stable ID, a name from the VLM and a state. Recall reads them back with the snapshot.</p>
+          </div>
+          <figure>
+            <div class="pic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" class="scene" role="img" aria-label="Recall perception view: five objects on a table, each with a segmentation mask, a stable ID, a name, and a state">
+  <defs>
+    <radialGradient id="vig-inv" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#15181c"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+    <pattern id="grid-inv" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="720" fill="url(#vig-inv)"/>
+  <rect width="1280" height="720" fill="url(#grid-inv)"/>
+  <polygon points="250,300 1030,300 1170,650 110,650" fill="#171a1e" stroke="#2a2f35" stroke-width="1.5"/>
+  <polygon points="250,300 1030,300 1040,312 240,312" fill="#1f242a"/>
+  <line x1="110" y1="650" x2="1170" y2="650" stroke="#0b0d0f" stroke-width="4"/>
+  <g>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#2c3036"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#20242a" stroke="#3a4048"/>
+    <rect x="360" y="340" width="218" height="122" rx="2" fill="#11151a"/>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#ff5fb0" fill-opacity=".26" stroke="#ff5fb0" stroke-width="1.6"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#ff5fb0" fill-opacity=".22" stroke="#ff5fb0" stroke-width="1.6"/>
+    <line x1="352" y1="332" x2="330" y2="300" stroke="#ff5fb0" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(200,276)">
+      <rect width="230" height="24" fill="#0a0b0d" stroke="#ff5fb0" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff5fb0"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#2 SILVER LAPTOP</text>
+      <text x="168" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff5fb0">.94</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#5a1d1d"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#5a1d1d" stroke-width="10"/>
+    <ellipse cx="735" cy="502" rx="35" ry="8" fill="#7a2a2a"/>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#35d1e6" fill-opacity=".26" stroke="#35d1e6" stroke-width="1.6"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#35d1e6" stroke-width="1.6"/>
+    <line x1="735" y1="500" x2="735" y2="462" stroke="#35d1e6" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(560,438)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#35d1e6" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#35d1e6"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#3 RED CERAMIC MUG</text>
+      <text x="188" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#35d1e6">.91</text>
+      <text x="216" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#1f4a2c"/>
+    <rect x="878" y="366" width="20" height="26" rx="4" fill="#1f4a2c"/>
+    <rect x="875" y="356" width="26" height="14" rx="3" fill="#2f6b40"/>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <rect x="875" y="356" width="26" height="36" rx="4" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <line x1="888" y1="356" x2="888" y2="326" stroke="#a6e05a" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(806,302)">
+      <rect width="262" height="24" fill="#0a0b0d" stroke="#a6e05a" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a6e05a"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#1 GREEN WATER BOTTLE</text>
+      <text x="200" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a6e05a">.96</text>
+      <text x="228" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#0e0f11" stroke="#2c3036"/>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#ff9a3c" fill-opacity=".26" stroke="#ff9a3c" stroke-width="1.6"/>
+    <line x1="659" y1="616" x2="659" y2="646" stroke="#ff9a3c" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(548,646)">
+      <rect width="236" height="24" fill="#0a0b0d" stroke="#ff9a3c" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff9a3c"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#4 BLACK CELL PHONE</text>
+      <text x="176" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff9a3c">.88</text>
+      <text x="204" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#1e2a5a"/>
+    <polygon points="950,478 962,478 950,556 938,556" fill="#16204a"/>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#a78bfa" fill-opacity=".24" stroke="#a78bfa" stroke-width="1.6"/>
+    <line x1="1014" y1="556" x2="1014" y2="586" stroke="#a78bfa" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(892,586)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#a78bfa" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a78bfa"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#5 BLUE HARDCOVER BOOK</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a78bfa">.90</text>
+      <text x="224" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#8b9298">
+    <text x="28" y="36" fill="#f5f7f8">CAM 01</text>
+    <text x="88" y="36">1280×720 · H.264 · CH0</text>
+    <text x="1252" y="36" text-anchor="end">10:44:49 UTC</text>
+    <text x="28" y="696">SEG <tspan fill="#54d68a">LIVE</tspan>   POSE <tspan fill="#54d68a">LIVE</tspan>   VLM <tspan fill="#8b9298">IDLE</tspan></text>
+    <text x="1252" y="696" text-anchor="end">OBJECTS <tspan fill="#f5f7f8">5</tspan>   PERSONS <tspan fill="#f5f7f8">0</tspan>   MODALIX · NO CLOUD</text>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".55" stroke-width="1.5" fill="none">
+    <path d="M16 48 V16 H48"/><path d="M1232 16 H1264 V48"/><path d="M16 672 V704 H48"/><path d="M1264 672 V704 H1232"/>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".35" fill="none">
+    <path d="M180 200 h20 M190 190 v20"/><path d="M1100 470 h20 M1110 460 v20"/>
+  </g>
+</svg></div>
+            <figcaption>10:44:49 &middot; 5 objects &middot; 0 persons</figcaption>
+          </figure>
+        </li>
+        <li class="beat noimg">
+          <div class="m"><span aria-hidden="true"></span>2</div>
+          <div class="t">
+            <h3>Move the mug off-frame</h3>
+            <div class="say"><span>Q</span><span>Where's the red mug?</span></div>
+            <p>The mug goes missing after 2 s. The answer names who moved it, when, and which way they went, with the snapshot from the moment of pickup.</p>
+          </div>
+        </li>
+        <li class="beat">
+          <div class="m"><span aria-hidden="true"></span>3</div>
+          <div class="t">
+            <h3>A judge picks up the laptop</h3>
+            <div class="say"><span>Q</span><span>Who took my laptop?</span></div>
+            <p>Pose puts a wrist within 60 px of the laptop mask as it moves. The pickup is attributed to "the person in the blue shirt", never to a name or a face.</p>
+          </div>
+          <figure>
+            <div class="pic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" class="scene" role="img" aria-label="Recall attribution view: a person in a blue shirt lifts the silver laptop; the right wrist is within 28 px of the laptop mask, so the pickup is attributed to that person">
+  <defs>
+    <radialGradient id="vig-lap" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#15181c"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+    <pattern id="grid-lap" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="720" fill="url(#vig-lap)"/>
+  <rect width="1280" height="720" fill="url(#grid-lap)"/>
+  <polygon points="250,300 1030,300 1170,650 110,650" fill="#171a1e" stroke="#2a2f35" stroke-width="1.5"/>
+  <polygon points="250,300 1030,300 1040,312 240,312" fill="#1f242a"/>
+  <line x1="110" y1="650" x2="1170" y2="650" stroke="#0b0d0f" stroke-width="4"/>
+  <g transform="translate(-4,-28)">
+    <polygon points="340,470 600,470 612,522 326,522" fill="#2c3036"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#20242a" stroke="#3a4048"/>
+    <rect x="360" y="340" width="218" height="122" rx="2" fill="#11151a"/>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#ff5fb0" fill-opacity=".26" stroke="#ff5fb0" stroke-width="1.6"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#ff5fb0" fill-opacity=".22" stroke="#ff5fb0" stroke-width="1.6"/>
+    <line x1="352" y1="332" x2="330" y2="300" stroke="#ff5fb0" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(624,420)">
+      <rect width="230" height="24" fill="#0a0b0d" stroke="#ff5fb0" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff5fb0"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#2 SILVER LAPTOP</text>
+      <text x="168" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff5fb0">.94</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#f0b84b">CAR</text>
+    </g>
+  </g>
+  <g>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#5a1d1d"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#5a1d1d" stroke-width="10"/>
+    <ellipse cx="735" cy="502" rx="35" ry="8" fill="#7a2a2a"/>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#35d1e6" fill-opacity=".26" stroke="#35d1e6" stroke-width="1.6"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#35d1e6" stroke-width="1.6"/>
+    <line x1="735" y1="500" x2="735" y2="462" stroke="#35d1e6" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(560,438)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#35d1e6" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#35d1e6"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#3 RED CERAMIC MUG</text>
+      <text x="188" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#35d1e6">.91</text>
+      <text x="216" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#1f4a2c"/>
+    <rect x="878" y="366" width="20" height="26" rx="4" fill="#1f4a2c"/>
+    <rect x="875" y="356" width="26" height="14" rx="3" fill="#2f6b40"/>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <rect x="875" y="356" width="26" height="36" rx="4" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <line x1="888" y1="356" x2="888" y2="326" stroke="#a6e05a" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(806,302)">
+      <rect width="262" height="24" fill="#0a0b0d" stroke="#a6e05a" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a6e05a"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#1 GREEN WATER BOTTLE</text>
+      <text x="200" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a6e05a">.96</text>
+      <text x="228" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#0e0f11" stroke="#2c3036"/>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#ff9a3c" fill-opacity=".26" stroke="#ff9a3c" stroke-width="1.6"/>
+    <line x1="659" y1="616" x2="659" y2="646" stroke="#ff9a3c" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(548,646)">
+      <rect width="236" height="24" fill="#0a0b0d" stroke="#ff9a3c" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff9a3c"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#4 BLACK CELL PHONE</text>
+      <text x="176" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff9a3c">.88</text>
+      <text x="204" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#1e2a5a"/>
+    <polygon points="950,478 962,478 950,556 938,556" fill="#16204a"/>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#a78bfa" fill-opacity=".24" stroke="#a78bfa" stroke-width="1.6"/>
+    <line x1="1014" y1="556" x2="1014" y2="586" stroke="#a78bfa" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(892,586)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#a78bfa" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a78bfa"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#5 BLUE HARDCOVER BOOK</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a78bfa">.90</text>
+      <text x="224" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+<rect x="150" y="82" width="270" height="400" fill="#4ba3ff" fill-opacity=".06" stroke="#4ba3ff" stroke-width="1.2" stroke-dasharray="6 4"/>
+<line x1="212" y1="180" x2="316" y2="182" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="212" y1="180" x2="196" y2="292" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="196" y1="292" x2="340" y2="446" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="316" y1="182" x2="392" y2="292" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="392" y1="292" x2="560" y2="446" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="212" y1="180" x2="224" y2="352" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="316" y1="182" x2="306" y2="354" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="224" y1="352" x2="306" y2="354" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="262" y1="112" x2="212" y2="180" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="262" y1="112" x2="316" y2="182" stroke="#4ba3ff" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="262" cy="112" r="7" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="212" cy="180" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="316" cy="182" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="196" cy="292" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="340" cy="446" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="392" cy="292" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="560" cy="446" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="224" cy="352" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="306" cy="354" r="4.5" fill="#0a0b0d" stroke="#4ba3ff" stroke-width="2"/>
+<circle cx="560" cy="446" r="16" fill="none" stroke="#f0b84b" stroke-width="2"/>
+<circle cx="560" cy="446" r="60" fill="none" stroke="#f0b84b" stroke-opacity=".35" stroke-width="1" stroke-dasharray="3 4"/>
+<line x1="560" y1="446" x2="596" y2="466" stroke="#f0b84b" stroke-width="1.5"/>
+<circle cx="596" cy="466" r="3" fill="#f0b84b"/>
+<g transform="translate(40,58)"><rect width="252" height="24" fill="#0a0b0d" stroke="#4ba3ff" stroke-opacity=".7"/><rect width="4" height="24" fill="#4ba3ff"/><text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">P1 PERSON IN BLUE SHIRT</text><text x="226" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#4ba3ff">.97</text></g>
+</g>
+<g transform="translate(600,566)"><rect width="302" height="24" fill="#0a0b0d" stroke="#f0b84b"/><rect width="4" height="24" fill="#f0b84b"/><text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f0b84b">R WRIST → #2 · 28 PX · 0.6 S · PICKED UP</text></g>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#8b9298">
+    <text x="28" y="36" fill="#f5f7f8">CAM 01</text>
+    <text x="88" y="36">1280×720 · H.264 · CH0</text>
+    <text x="1252" y="36" text-anchor="end">10:50:45 UTC</text>
+    <text x="28" y="696">SEG <tspan fill="#54d68a">LIVE</tspan>   POSE <tspan fill="#54d68a">LIVE</tspan>   VLM <tspan fill="#f0b84b">NAMING</tspan></text>
+    <text x="1252" y="696" text-anchor="end">OBJECTS <tspan fill="#f5f7f8">5</tspan>   PERSONS <tspan fill="#f5f7f8">1</tspan>   MODALIX · NO CLOUD</text>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".55" stroke-width="1.5" fill="none">
+    <path d="M16 48 V16 H48"/><path d="M1232 16 H1264 V48"/><path d="M16 672 V704 H48"/><path d="M1264 672 V704 H1232"/>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".35" fill="none">
+    <path d="M180 200 h20 M190 190 v20"/><path d="M1100 470 h20 M1110 460 v20"/>
+  </g>
+</svg></div>
+            <figcaption>10:50:45 &middot; R wrist &middot; 28 px &middot; picked up</figcaption>
+          </figure>
+        </li>
+        <li class="beat noimg">
+          <div class="m"><span aria-hidden="true"></span>4</div>
+          <div class="t">
+            <span class="tag">Cable out</span>
+            <h3>Pull the Ethernet cable, ask again</h3>
+            <div class="say"><span>Q</span><span>Who took my laptop?</span></div>
+            <p>Same answer, same latency. There is no cloud client to lose and no CDN to wait for. The link that matters is the one to the speaker.</p>
+          </div>
+        </li>
+        <li class="beat">
+          <div class="m"><span aria-hidden="true"></span>5</div>
+          <div class="t">
+            <h3>Replay the last ten minutes</h3>
+            <div class="say"><span>Q</span><span>What happened in the last ten minutes?</span></div>
+            <p>A three-sentence summary over the event log: what appeared, what moved, who took what and where they went. Every sentence cites an event ID.</p>
+          </div>
+          <figure>
+            <div class="pic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" class="scene" role="img" aria-label="Recall live view now: three objects remain on the table; the red mug and silver laptop are marked missing with their last-seen times and exit directions">
+  <defs>
+    <radialGradient id="vig-now" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#15181c"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+    <pattern id="grid-now" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="720" fill="url(#vig-now)"/>
+  <rect width="1280" height="720" fill="url(#grid-now)"/>
+  <polygon points="250,300 1030,300 1170,650 110,650" fill="#171a1e" stroke="#2a2f35" stroke-width="1.5"/>
+  <polygon points="250,300 1030,300 1040,312 240,312" fill="#1f242a"/>
+  <line x1="110" y1="650" x2="1170" y2="650" stroke="#0b0d0f" stroke-width="4"/>
+  <g opacity=".38">
+    <polygon points="340,470 600,470 612,522 326,522" fill="#2c3036"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#20242a" stroke="#3a4048"/>
+    <rect x="360" y="340" width="218" height="122" rx="2" fill="#11151a"/>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#ff5fb0" fill-opacity=".26" stroke="#ff5fb0" stroke-width="1.6"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#ff5fb0" fill-opacity=".22" stroke="#ff5fb0" stroke-width="1.6"/>
+    <line x1="352" y1="332" x2="330" y2="300" stroke="#ff5fb0" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(200,276)">
+      <rect width="230" height="24" fill="#0a0b0d" stroke="#ff5fb0" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff5fb0"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#2 SILVER LAPTOP</text>
+      <text x="168" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff5fb0">.94</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff4d42">MIS</text>
+    </g>
+  </g>
+  <g opacity=".38">
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#5a1d1d"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#5a1d1d" stroke-width="10"/>
+    <ellipse cx="735" cy="502" rx="35" ry="8" fill="#7a2a2a"/>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#35d1e6" fill-opacity=".26" stroke="#35d1e6" stroke-width="1.6"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#35d1e6" stroke-width="1.6"/>
+    <line x1="735" y1="500" x2="735" y2="462" stroke="#35d1e6" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(560,438)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#35d1e6" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#35d1e6"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#3 RED CERAMIC MUG</text>
+      <text x="188" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#35d1e6">.91</text>
+      <text x="216" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff4d42">MIS</text>
+    </g>
+  </g>
+  <g>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#1f4a2c"/>
+    <rect x="878" y="366" width="20" height="26" rx="4" fill="#1f4a2c"/>
+    <rect x="875" y="356" width="26" height="14" rx="3" fill="#2f6b40"/>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <rect x="875" y="356" width="26" height="36" rx="4" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <line x1="888" y1="356" x2="888" y2="326" stroke="#a6e05a" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(806,302)">
+      <rect width="262" height="24" fill="#0a0b0d" stroke="#a6e05a" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a6e05a"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#1 GREEN WATER BOTTLE</text>
+      <text x="200" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a6e05a">.96</text>
+      <text x="228" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#0e0f11" stroke="#2c3036"/>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#ff9a3c" fill-opacity=".26" stroke="#ff9a3c" stroke-width="1.6"/>
+    <line x1="659" y1="616" x2="659" y2="646" stroke="#ff9a3c" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(548,646)">
+      <rect width="236" height="24" fill="#0a0b0d" stroke="#ff9a3c" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff9a3c"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#4 BLACK CELL PHONE</text>
+      <text x="176" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff9a3c">.88</text>
+      <text x="204" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#1e2a5a"/>
+    <polygon points="950,478 962,478 950,556 938,556" fill="#16204a"/>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#a78bfa" fill-opacity=".24" stroke="#a78bfa" stroke-width="1.6"/>
+    <line x1="1014" y1="556" x2="1014" y2="586" stroke="#a78bfa" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(892,586)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#a78bfa" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a78bfa"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#5 BLUE HARDCOVER BOOK</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a78bfa">.90</text>
+      <text x="224" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+  <g transform="translate(560,398)"><rect width="338" height="24" fill="#0a0b0d" stroke="#ff4d42"/><rect width="4" height="24" fill="#ff4d42"/><text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#ff4d42">#3 MISSING · LAST SEEN 10:47:47 · MOVED RIGHT</text></g>
+<g transform="translate(200,246)"><rect width="331" height="24" fill="#0a0b0d" stroke="#ff4d42"/><rect width="4" height="24" fill="#ff4d42"/><text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#ff4d42">#2 MISSING · LAST SEEN 10:50:47 · MOVED LEFT</text></g>
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#8b9298">
+    <text x="28" y="36" fill="#f5f7f8">CAM 01</text>
+    <text x="88" y="36">1280×720 · H.264 · CH0</text>
+    <text x="1252" y="36" text-anchor="end">10:51:52 UTC</text>
+    <text x="28" y="696">SEG <tspan fill="#54d68a">LIVE</tspan>   POSE <tspan fill="#54d68a">LIVE</tspan>   VLM <tspan fill="#8b9298">IDLE</tspan></text>
+    <text x="1252" y="696" text-anchor="end">OBJECTS <tspan fill="#f5f7f8">3</tspan>   PERSONS <tspan fill="#f5f7f8">0</tspan>   MODALIX · NO CLOUD</text>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".55" stroke-width="1.5" fill="none">
+    <path d="M16 48 V16 H48"/><path d="M1232 16 H1264 V48"/><path d="M16 672 V704 H48"/><path d="M1264 672 V704 H1232"/>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".35" fill="none">
+    <path d="M180 200 h20 M190 190 v20"/><path d="M1100 470 h20 M1110 460 v20"/>
+  </g>
+</svg></div>
+            <figcaption>10:51:52 &middot; 3 objects &middot; 2 missing</figcaption>
+          </figure>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="where">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Where it goes</p>
+        <h2>Anywhere things go missing and the video must not.</h2>
+      </div>
+      <div class="tiles">
+        <article class="tile" style="--c:var(--cyan)">
+          <h3>Homes</h3>
+          <p>Keys, glasses, medication, packages. The things you lose every week, found by asking.</p>
+          <span class="ask">Where did I leave my glasses?</span>
+        </article>
+        <article class="tile" style="--c:var(--magenta)">
+          <h3>Hospitals</h3>
+          <p>Custody of mobile equipment on a ward, without a patient's face ever leaving the building.</p>
+          <span class="ask">Who took the infusion pump?</span>
+        </article>
+        <article class="tile" style="--c:var(--lime)">
+          <h3>Labs and workshops</h3>
+          <p>Tool handoffs between people and benches, remembered without a sign-out sheet.</p>
+          <span class="ask">Who had the torque wrench last?</span>
+        </article>
+        <article class="tile" style="--c:var(--orange)">
+          <h3>Retail back rooms</h3>
+          <p>Stock that walks between the shelf, the cart and the door, with the moment it moved.</p>
+          <span class="ask">What left the stockroom after 6?</span>
+        </article>
+      </div>
+      <div class="roadmap">
+        <div>
+          <h3>Roadmap</h3>
+          <p style="color:var(--muted); margin-top:8px">What comes after a single camera.</p>
+        </div>
+        <ul>
+          <li><span>NEXT</span><div>Multi-camera memory via the Modalix PCIe card</div></li>
+          <li><span>NEXT</span><div>Depth for metric spatial language ("two meters left of the door")</div></li>
+          <li><span>THEN</span><div>Open-vocabulary segmentation</div></li>
+          <li><span>THEN</span><div>Policy-controlled retention</div></li>
+        </ul>
+      </div>
+      <div class="cta">
+        <div>
+          <h2>Open the console. Ask the room.</h2>
+          <p>The live demo runs beside this page. The runtime, the UI, the tracker rules and the test suite are all in one repository: <code>github.com/vnmoorthy/recall</code></p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-primary" href="./app.html">Launch the live demo
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          <a class="btn" href="https://github.com/vnmoorthy/recall" rel="noopener">View on GitHub
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
         </div>
       </div>
+    </div>
+  </section>
+</main>
 
-      <aside class="ask-pane">
-        <div class="section-heading">
-          <div><span class="section-index">02</span><span class="eyebrow">MEMORY QUERY</span></div>
-          <span id="query-state" class="query-state">READY</span>
-        </div>
-        <h1>FIND WHAT<br>MOVED.</h1>
-        <form id="ask-form">
-          <label for="question">QUERY VISUAL MEMORY</label>
-          <div class="command-line">
-            <input id="question" name="question" autocomplete="off" value="Where is the red mug?" aria-label="Question">
-            <button id="mic-button" class="icon-button mic" type="button" title="Ask by voice" aria-label="Ask by voice" aria-pressed="false"><span class="mic-icon" aria-hidden="true"></span></button>
-            <button id="ask-button" class="send-button" type="submit">EXECUTE <span aria-hidden="true">&#8599;</span></button>
-          </div>
-        </form>
-        <div class="quick-queries" aria-label="Suggested queries">
-          <button type="button" data-question="What's on the table?">INVENTORY</button>
-          <button type="button" data-question="Where is the red mug?">LOCATE MUG</button>
-          <button type="button" data-question="Who took my laptop?">CUSTODY</button>
-        </div>
-        <div class="response-block">
-          <div class="response-label"><span>RESPONSE</span><span id="evidence-count">0 EVIDENCE FRAMES</span></div>
-          <div id="answer" class="answer" aria-live="polite">Visual memory standing by.</div>
-          <div id="answer-snapshots" class="snapshot-grid"></div>
-        </div>
-        <button id="summary-button" class="secondary-button" type="button"><span>MISSION SUMMARY // LAST 10 MIN</span><span aria-hidden="true">&#8594;</span></button>
-      </aside>
-    </section>
+<footer>
+  <div class="wrap">
+    <span>Built at the AI Infra Summit Hackathon 2026 &middot; SiMa.ai track &middot; Open source</span>
+    <a href="https://github.com/vnmoorthy/recall" rel="noopener">github.com/vnmoorthy/recall</a>
+  </div>
+</footer>
 
-    <section class="memory-band">
-      <div class="inventory-pane">
-        <div class="section-heading memory-heading">
-          <div><span class="section-index">03</span><span class="eyebrow">OBJECT INDEX</span></div>
-          <span id="inventory-count">0 OBJECTS</span>
-        </div>
-        <div id="inventory" class="inventory-grid"></div>
-      </div>
-      <div class="timeline-pane">
-        <div class="section-heading memory-heading">
-          <div><span class="section-index">04</span><h2 id="timeline-title">EVENT LOG</h2></div>
-          <button id="all-events" class="text-button" type="button" hidden>VIEW ALL &#8592;</button>
-        </div>
-        <div id="timeline" class="timeline"></div>
-      </div>
-    </section>
-  </main>
+<script>
+  (function(){
+    var root=document.documentElement;
+    var reveal=function(){ root.classList.add('fonts-in'); };
+    if(document.fonts && document.fonts.ready){ document.fonts.ready.then(reveal, reveal); setTimeout(reveal, 1500); }
+    else{ reveal(); }
+  })();
+</script>
 
-  <dialog id="settings-dialog">
-    <form method="dialog">
-      <div class="dialog-heading"><div><span>CONNECTION</span><h2>LINK CONFIGURATION</h2></div><button class="icon-button" value="cancel" aria-label="Close">&#215;</button></div>
-      <label>RECALL API<input id="api-url" value="http://10.42.0.232:8090"></label>
-      <label>INSIGHT VIEWER<input id="insight-url" value="https://10.42.0.1:8081/static/viewer.html?mode=light&amp;src=0&amp;max_channels=4"></label>
-      <button id="save-settings" class="send-button dialog-save" value="default">APPLY CONNECTION</button>
-    </form>
-  </dialog>
-  <dialog id="diagnostics-dialog" class="diagnostics-dialog">
-    <form method="dialog">
-      <div class="dialog-heading"><div><span>DIAGNOSTICS</span><h2>SYSTEM CHECK</h2></div><button class="icon-button" value="cancel" aria-label="Close">&#215;</button></div>
-      <div class="diagnostic-summary"><span id="diagnostic-count">CHECKING</span><strong id="diagnostic-headline">VERIFYING PRODUCT PATHS</strong></div>
-      <div id="diagnostic-results" class="diagnostic-results" aria-live="polite"></div>
-      <button id="rerun-diagnostics" class="secondary-button" type="button"><span>RERUN SYSTEM CHECK</span><span aria-hidden="true">&#8635;</span></button>
-      <button class="send-button dialog-save" value="cancel">DONE</button>
-    </form>
-  </dialog>
-  <script src="app.js"></script>
 </body>
 </html>

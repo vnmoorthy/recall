@@ -5,7 +5,7 @@ mistaking the public replay for live Modalix inference.
 
 ## Public Product Demo
 
-Open <https://vnmoorthy.github.io/recall/>.
+Open <https://vnmoorthy.github.io/recall/app.html> (the site root at <https://vnmoorthy.github.io/recall/> is the product page; its **Launch the live demo** button opens the app).
 
 1. Confirm the header says `SIMULATION` and the first panel says
    `RECORDED PERCEPTION`.

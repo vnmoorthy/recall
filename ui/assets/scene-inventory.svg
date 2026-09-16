@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-label="Recall perception view: five objects on a table, each with a segmentation mask, a stable ID, a name, and a state">
+  <defs>
+    <radialGradient id="vig" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#15181c"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="720" fill="url(#vig)"/>
+  <rect width="1280" height="720" fill="url(#grid)"/>
+
+  <!-- table -->
+  <polygon points="250,300 1030,300 1170,650 110,650" fill="#171a1e" stroke="#2a2f35" stroke-width="1.5"/>
+  <polygon points="250,300 1030,300 1040,312 240,312" fill="#1f242a"/>
+  <line x1="110" y1="650" x2="1170" y2="650" stroke="#0b0d0f" stroke-width="4"/>
+
+  <!-- ===== laptop  (#2, magenta) ===== -->
+  <g id="laptop">
+    <polygon points="340,470 600,470 612,522 326,522" fill="#2c3036"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#20242a" stroke="#3a4048"/>
+    <rect x="360" y="340" width="218" height="122" rx="2" fill="#11151a"/>
+    <polygon points="340,470 600,470 612,522 326,522" fill="#ff5fb0" fill-opacity=".26" stroke="#ff5fb0" stroke-width="1.6"/>
+    <rect x="352" y="332" width="234" height="140" rx="4" fill="#ff5fb0" fill-opacity=".22" stroke="#ff5fb0" stroke-width="1.6"/>
+    <line x1="352" y1="332" x2="330" y2="300" stroke="#ff5fb0" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(200,276)">
+      <rect width="230" height="24" fill="#0a0b0d" stroke="#ff5fb0" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff5fb0"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#2 SILVER LAPTOP</text>
+      <text x="168" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff5fb0">.94</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+
+  <!-- ===== red mug  (#3, cyan) ===== -->
+  <g id="mug">
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#5a1d1d"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#5a1d1d" stroke-width="10"/>
+    <ellipse cx="735" cy="502" rx="35" ry="8" fill="#7a2a2a"/>
+    <rect x="700" y="500" width="70" height="72" rx="8" fill="#35d1e6" fill-opacity=".26" stroke="#35d1e6" stroke-width="1.6"/>
+    <path d="M770 516 h16 a16 16 0 0 1 0 40 h-16" fill="none" stroke="#35d1e6" stroke-width="1.6"/>
+    <line x1="735" y1="500" x2="735" y2="462" stroke="#35d1e6" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(560,438)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#35d1e6" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#35d1e6"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#3 RED CERAMIC MUG</text>
+      <text x="188" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#35d1e6">.91</text>
+      <text x="216" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+
+  <!-- ===== bottle  (#1, lime) ===== -->
+  <g id="bottle">
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#1f4a2c"/>
+    <rect x="878" y="366" width="20" height="26" rx="4" fill="#1f4a2c"/>
+    <rect x="875" y="356" width="26" height="14" rx="3" fill="#2f6b40"/>
+    <rect x="868" y="384" width="40" height="176" rx="12" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <rect x="875" y="356" width="26" height="36" rx="4" fill="#a6e05a" fill-opacity=".24" stroke="#a6e05a" stroke-width="1.6"/>
+    <line x1="888" y1="356" x2="888" y2="326" stroke="#a6e05a" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(806,302)">
+      <rect width="262" height="24" fill="#0a0b0d" stroke="#a6e05a" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a6e05a"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#1 GREEN WATER BOTTLE</text>
+      <text x="200" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a6e05a">.96</text>
+      <text x="228" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+
+  <!-- ===== phone  (#4, orange) ===== -->
+  <g id="phone">
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#0e0f11" stroke="#2c3036"/>
+    <rect x="630" y="590" width="58" height="26" rx="4" fill="#ff9a3c" fill-opacity=".26" stroke="#ff9a3c" stroke-width="1.6"/>
+    <line x1="659" y1="616" x2="659" y2="646" stroke="#ff9a3c" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(548,646)">
+      <rect width="236" height="24" fill="#0a0b0d" stroke="#ff9a3c" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#ff9a3c"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#4 BLACK CELL PHONE</text>
+      <text x="176" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#ff9a3c">.88</text>
+      <text x="204" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+
+  <!-- ===== book  (#5, violet) ===== -->
+  <g id="book">
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#1e2a5a"/>
+    <polygon points="950,478 962,478 950,556 938,556" fill="#16204a"/>
+    <polygon points="950,478 1076,478 1092,556 938,556" fill="#a78bfa" fill-opacity=".24" stroke="#a78bfa" stroke-width="1.6"/>
+    <line x1="1014" y1="556" x2="1014" y2="586" stroke="#a78bfa" stroke-width="1" stroke-dasharray="2 3"/>
+    <g transform="translate(892,586)">
+      <rect width="250" height="24" fill="#0a0b0d" stroke="#a78bfa" stroke-opacity=".7"/>
+      <rect width="4" height="24" fill="#a78bfa"/>
+      <text x="12" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" fill="#f5f7f8">#5 BLUE HARDCOVER BOOK</text>
+      <text x="196" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#a78bfa">.90</text>
+      <text x="224" y="16" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#54d68a">STA</text>
+    </g>
+  </g>
+
+  <!-- ===== HUD ===== -->
+  <g font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="11" fill="#8b9298">
+    <text x="28" y="36" fill="#f5f7f8">CAM 01</text>
+    <text x="88" y="36">1280×720 · H.264 · CH0</text>
+    <text x="1252" y="36" text-anchor="end">10:44:49 UTC</text>
+    <text x="28" y="696">SEG <tspan fill="#54d68a">LIVE</tspan>   POSE <tspan fill="#54d68a">LIVE</tspan>   VLM <tspan fill="#8b9298">IDLE</tspan></text>
+    <text x="1252" y="696" text-anchor="end">OBJECTS <tspan fill="#f5f7f8">5</tspan>   PERSONS <tspan fill="#f5f7f8">0</tspan>   MODALIX · NO CLOUD</text>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".55" stroke-width="1.5" fill="none">
+    <path d="M16 48 V16 H48"/><path d="M1232 16 H1264 V48"/><path d="M16 672 V704 H48"/><path d="M1264 672 V704 H1232"/>
+  </g>
+  <g stroke="#f5f7f8" stroke-opacity=".35" fill="none">
+    <path d="M180 200 h20 M190 190 v20"/><path d="M1100 470 h20 M1110 460 v20"/>
+  </g>
+</svg>

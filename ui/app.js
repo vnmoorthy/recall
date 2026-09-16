@@ -52,23 +52,23 @@ async function json(path, options) {
 function demoDataset() {
   const now = Date.now() / 1000;
   const inventory = [
-    {id:3, class:"bottle", name:"green water bottle", state:"stationary", seconds_since_seen:4, crop_path:"assets/scene-now.jpg"},
-    {id:4, class:"cell phone", name:"black cell phone", state:"stationary", seconds_since_seen:7, crop_path:"assets/scene-now.jpg"},
-    {id:5, class:"book", name:"blue hardcover book", state:"stationary", seconds_since_seen:9, crop_path:"assets/scene-now.jpg"},
-    {id:1, class:"cup", name:"red ceramic mug", state:"missing", seconds_since_seen:182, crop_path:"assets/mug-pickup.jpg"},
-    {id:2, class:"laptop", name:"silver laptop", state:"missing", seconds_since_seen:64, crop_path:"assets/laptop-pickup.jpg"},
+    {id:3, class:"bottle", name:"green water bottle", state:"stationary", seconds_since_seen:4, crop_path:"assets/scene-now.svg"},
+    {id:4, class:"cell phone", name:"black cell phone", state:"stationary", seconds_since_seen:7, crop_path:"assets/scene-now.svg"},
+    {id:5, class:"book", name:"blue hardcover book", state:"stationary", seconds_since_seen:9, crop_path:"assets/scene-now.svg"},
+    {id:1, class:"cup", name:"red ceramic mug", state:"missing", seconds_since_seen:182, crop_path:"assets/mug-pickup.svg"},
+    {id:2, class:"laptop", name:"silver laptop", state:"missing", seconds_since_seen:64, crop_path:"assets/laptop-pickup.svg"},
   ];
   const events = [
-    {id:10, ts:now-64, type:"person_left", person_id:1, person_name:"person in blue shirt", frame_path:"assets/laptop-pickup.jpg"},
-    {id:9, ts:now-122, type:"object_missing", object_id:2, object_name:"silver laptop", object_class:"laptop", person_name:"person in blue shirt", direction:"left", frame_path:"assets/laptop-pickup.jpg"},
-    {id:8, ts:now-124, type:"picked_up", object_id:2, object_name:"silver laptop", object_class:"laptop", person_name:"person in blue shirt", direction:"left", frame_path:"assets/laptop-pickup.jpg"},
-    {id:7, ts:now-302, type:"object_missing", object_id:1, object_name:"red ceramic mug", object_class:"cup", person_name:"person in blue shirt", direction:"right", frame_path:"assets/mug-pickup.jpg"},
-    {id:6, ts:now-304, type:"picked_up", object_id:1, object_name:"red ceramic mug", object_class:"cup", person_name:"person in blue shirt", direction:"right", frame_path:"assets/mug-pickup.jpg"},
-    {id:5, ts:now-480, type:"object_appeared", object_id:5, object_name:"blue hardcover book", object_class:"book", frame_path:"assets/scene-inventory.jpg"},
-    {id:4, ts:now-480, type:"object_appeared", object_id:4, object_name:"black cell phone", object_class:"cell phone", frame_path:"assets/scene-inventory.jpg"},
-    {id:3, ts:now-480, type:"object_appeared", object_id:3, object_name:"green water bottle", object_class:"bottle", frame_path:"assets/scene-inventory.jpg"},
-    {id:2, ts:now-480, type:"object_appeared", object_id:2, object_name:"silver laptop", object_class:"laptop", frame_path:"assets/scene-inventory.jpg"},
-    {id:1, ts:now-480, type:"object_appeared", object_id:1, object_name:"red ceramic mug", object_class:"cup", frame_path:"assets/scene-inventory.jpg"},
+    {id:10, ts:now-64, type:"person_left", person_id:1, person_name:"person in blue shirt", frame_path:"assets/laptop-pickup.svg"},
+    {id:9, ts:now-122, type:"object_missing", object_id:2, object_name:"silver laptop", object_class:"laptop", person_name:"person in blue shirt", direction:"left", frame_path:"assets/laptop-pickup.svg"},
+    {id:8, ts:now-124, type:"picked_up", object_id:2, object_name:"silver laptop", object_class:"laptop", person_name:"person in blue shirt", direction:"left", frame_path:"assets/laptop-pickup.svg"},
+    {id:7, ts:now-302, type:"object_missing", object_id:1, object_name:"red ceramic mug", object_class:"cup", person_name:"person in blue shirt", direction:"right", frame_path:"assets/mug-pickup.svg"},
+    {id:6, ts:now-304, type:"picked_up", object_id:1, object_name:"red ceramic mug", object_class:"cup", person_name:"person in blue shirt", direction:"right", frame_path:"assets/mug-pickup.svg"},
+    {id:5, ts:now-480, type:"object_appeared", object_id:5, object_name:"blue hardcover book", object_class:"book", frame_path:"assets/scene-inventory.svg"},
+    {id:4, ts:now-480, type:"object_appeared", object_id:4, object_name:"black cell phone", object_class:"cell phone", frame_path:"assets/scene-inventory.svg"},
+    {id:3, ts:now-480, type:"object_appeared", object_id:3, object_name:"green water bottle", object_class:"bottle", frame_path:"assets/scene-inventory.svg"},
+    {id:2, ts:now-480, type:"object_appeared", object_id:2, object_name:"silver laptop", object_class:"laptop", frame_path:"assets/scene-inventory.svg"},
+    {id:1, ts:now-480, type:"object_appeared", object_id:1, object_name:"red ceramic mug", object_class:"cup", frame_path:"assets/scene-inventory.svg"},
   ];
   return {inventory, events};
 }
@@ -101,21 +101,24 @@ function setQuestionBusy(busy) {
   byId("query-state").textContent = busy ? "PROCESSING" : "READY";
 }
 
+const classToken = (value) => String(value || "").toLowerCase().trim().replace(/\s+/g, "-");
+
 function renderSnapshots(items = []) {
   const usable = items.filter((item) => item.frame_path || item.crop_path).slice(0, 2);
   byId("evidence-count").textContent = `${usable.length} EVIDENCE FRAME${usable.length === 1 ? "" : "S"}`;
-  byId("answer-snapshots").innerHTML = usable.map((item) => {
+  byId("answer-snapshots").innerHTML = usable.map((item, index) => {
     const src = item.frame_path || item.crop_path;
-    return `<img src="${escapeHtml(mediaUrl(src))}" alt="Evidence frame" onerror="this.hidden=true">`;
+    const caption = String(src).split("/").pop().replace(/\.[a-z0-9]+$/i, "").replaceAll("-", " ").toUpperCase();
+    return `<figure class="snapshot"><img src="${escapeHtml(mediaUrl(src))}" alt="Evidence frame" onerror="this.hidden=true"><figcaption><span>FRAME ${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(caption)}</span></figcaption></figure>`;
   }).join("");
 }
 
 function renderInventory(items) {
   byId("inventory-count").textContent = `${items.length} OBJECTS`;
   byId("inventory").innerHTML = items.length ? items.map((item) => `
-    <button class="item-card${state.selectedObject === item.id ? " selected" : ""}" type="button" data-object-id="${Number(item.id)}" data-object-name="${escapeHtml(item.name || item.class)}" aria-pressed="${state.selectedObject === item.id}">
+    <button class="item-card${state.selectedObject === item.id ? " selected" : ""}" type="button" data-object-id="${Number(item.id)}" data-object-name="${escapeHtml(item.name || item.class)}" data-class="${escapeHtml(classToken(item.class))}" aria-pressed="${state.selectedObject === item.id}">
       ${item.crop_path ? `<img src="${escapeHtml(mediaUrl(item.crop_path))}" alt="${escapeHtml(item.name || item.class)}" onerror="this.className='item-image-placeholder';this.removeAttribute('src')">` : `<div class="item-image-placeholder"></div>`}
-      <div class="item-copy"><strong>${escapeHtml(item.name || item.class)}</strong><span class="item-meta">${escapeHtml(item.class).toUpperCase()} // ${formatAge(item.seconds_since_seen)}</span><span class="state ${escapeHtml(item.state)}">${escapeHtml(item.state).toUpperCase()}</span></div>
+      <div class="item-copy"><strong>${escapeHtml(item.name || item.class)}</strong><span class="item-meta">${escapeHtml(item.class).toUpperCase()} · ${formatAge(item.seconds_since_seen)}</span><span class="state ${escapeHtml(item.state)}">${escapeHtml(item.state).toUpperCase()}</span></div>
     </button>`).join("") : '<div class="empty">NO OBJECTS INDEXED</div>';
 }
 
@@ -123,8 +126,8 @@ function renderEvents(events) {
   byId("timeline").innerHTML = events.length ? events.map((event) => {
     const image = event.frame_path || event.crop_path;
     const subject = event.object_name || event.object_class || event.person_name || "Room";
-    const detail = [event.type.replaceAll("_", " "), event.person_name, event.direction].filter(Boolean).join(" // ");
-    return `<article class="event"><time>${formatEventTime(event.ts)}</time><div><strong>${escapeHtml(subject)}</strong><span>${escapeHtml(detail).toUpperCase()}</span></div>${image ? `<img src="${escapeHtml(mediaUrl(image))}" alt="" onerror="this.hidden=true">` : "<div></div>"}</article>`;
+    const detail = [event.type.replaceAll("_", " "), event.person_name, event.direction].filter(Boolean).join(" · ");
+    return `<article class="event" data-class="${escapeHtml(classToken(event.object_class || (event.person_name ? "person" : "")))}"><span class="event-dot" aria-hidden="true"></span><time>${formatEventTime(event.ts)}</time><div class="event-copy"><strong>${escapeHtml(subject)}</strong><span>${escapeHtml(detail).toUpperCase()}</span></div>${image ? `<img src="${escapeHtml(mediaUrl(image))}" alt="" onerror="this.hidden=true">` : "<div></div>"}</article>`;
   }).join("") : '<div class="empty">NO EVENTS IN THIS WINDOW</div>';
 }
 
@@ -147,6 +150,7 @@ function renderStatus(status) {
   byId("tts-status").textContent = status.tts === "piper-ready" ? "PIPER READY" : status.tts === "piper-warming" ? "WARMING" : "UNAVAILABLE";
   byId("model-name").textContent = status.resident_model || "FALLBACK RULES";
   }
+  byId("model-name").title = byId("model-name").textContent;
   const mode = byId("mode-badge");
   mode.innerHTML = `<i></i>${escapeHtml(status.mode_label || status.perception_mode || "hardware").toUpperCase()}`;
   mode.className = `badge ${status.perception_mode === "hardware" ? "" : "warning"}`;
@@ -154,16 +158,17 @@ function renderStatus(status) {
 }
 
 const scenarioSteps = [
-  {kicker:"01 // INVENTORY LOCK", message:"5 OBJECTS ACQUIRED", className:"", question:"What's on the table?", answer:"Five objects indexed: red ceramic mug, silver laptop, green water bottle, black cell phone, and blue hardcover book.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]},
-  {kicker:"02 // PICKUP DETECTED", message:"RED CERAMIC MUG // EXIT RIGHT", className:"event", question:"Where is the red mug?", answer:"Pickup detected. The person in the blue shirt moved the red ceramic mug right and out of frame.", snapshots:[{frame_path:"assets/mug-pickup.jpg"}]},
-  {kicker:"03 // CUSTODY EVENT", message:"SILVER LAPTOP // EXIT LEFT", className:"event", question:"Who took my laptop?", answer:"Custody event recorded. The person in the blue shirt picked up the silver laptop and moved left.", snapshots:[{frame_path:"assets/laptop-pickup.jpg"}]},
-  {kicker:"04 // MEMORY READY", message:"2 EVENTS // 2 EVIDENCE FRAMES", className:"complete", question:"What happened in the last ten minutes?", answer:"The red mug moved right and the silver laptop moved left with the person in the blue shirt. Three objects remain stationary.", snapshots:[{frame_path:"assets/mug-pickup.jpg"},{frame_path:"assets/laptop-pickup.jpg"}]},
+  {kicker:"01 // INVENTORY LOCK", message:"5 OBJECTS ACQUIRED", className:"", question:"What's on the table?", answer:"Five objects indexed: red ceramic mug, silver laptop, green water bottle, black cell phone, and blue hardcover book.", snapshots:[{frame_path:"assets/scene-inventory.svg"}]},
+  {kicker:"02 // PICKUP DETECTED", message:"RED CERAMIC MUG // EXIT RIGHT", className:"event", question:"Where is the red mug?", answer:"Pickup detected. The person in the blue shirt moved the red ceramic mug right and out of frame.", snapshots:[{frame_path:"assets/mug-pickup.svg"}]},
+  {kicker:"03 // CUSTODY EVENT", message:"SILVER LAPTOP // EXIT LEFT", className:"event", question:"Who took my laptop?", answer:"Custody event recorded. The person in the blue shirt picked up the silver laptop and moved left.", snapshots:[{frame_path:"assets/laptop-pickup.svg"}]},
+  {kicker:"04 // MEMORY READY", message:"2 EVENTS // 2 EVIDENCE FRAMES", className:"complete", question:"What happened in the last ten minutes?", answer:"The red mug moved right and the silver laptop moved left with the person in the blue shirt. Three objects remain stationary.", snapshots:[{frame_path:"assets/mug-pickup.svg"},{frame_path:"assets/laptop-pickup.svg"}]},
 ];
 
 function updateScenarioButton() {
   const button = byId("scenario-button");
   button.classList.toggle("running", state.scenarioRunning);
-  byId("scenario-icon").textContent = state.scenarioRunning ? "\u25A0" : state.scenarioPlayed ? "\u21BB" : "\u25B6";
+  const iconUse = byId("scenario-icon").querySelector("use");
+  if (iconUse) iconUse.setAttribute("href", state.scenarioRunning ? "#i-stop" : state.scenarioPlayed ? "#i-replay" : "#i-play");
   byId("scenario-action").textContent = state.scenarioRunning ? "STOP SCENARIO" : state.scenarioPlayed ? "REPLAY SCENARIO" : "RUN SCENARIO";
 }
 
@@ -276,22 +281,22 @@ function demoAnswer(question) {
   const words = question.toLowerCase();
   if (words.includes("table") || words.includes("inventory")) {
     const names = state.demo.inventory.filter((item) => item.state !== "missing").map((item) => item.name);
-    return {answer:`${names.length} objects remain in view: ${names.join(", ")}.`, snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
+    return {answer:`${names.length} objects remain in view: ${names.join(", ")}.`, snapshots:[{frame_path:"assets/scene-inventory.svg"}]};
   }
   if (words.includes("laptop")) {
     const missing = state.demo.inventory.find((item) => item.id === 2)?.state === "missing";
     return missing
-      ? {answer:"The person in the blue shirt picked up the silver laptop and moved left. It is now marked missing.", snapshots:[{frame_path:"assets/laptop-pickup.jpg"}]}
-      : {answer:"The silver laptop is still present near the center of the table.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
+      ? {answer:"The person in the blue shirt picked up the silver laptop and moved left. It is now marked missing.", snapshots:[{frame_path:"assets/laptop-pickup.svg"}]}
+      : {answer:"The silver laptop is still present near the center of the table.", snapshots:[{frame_path:"assets/scene-inventory.svg"}]};
   }
   if (words.includes("mug") || words.includes("cup")) {
     const missing = state.demo.inventory.find((item) => item.id === 1)?.state === "missing";
     return missing
-      ? {answer:"The person in the blue shirt picked up the red ceramic mug and moved right. It is now marked missing.", snapshots:[{frame_path:"assets/mug-pickup.jpg"}]}
-      : {answer:"The red ceramic mug is still present on the left side of the table.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
+      ? {answer:"The person in the blue shirt picked up the red ceramic mug and moved right. It is now marked missing.", snapshots:[{frame_path:"assets/mug-pickup.svg"}]}
+      : {answer:"The red ceramic mug is still present on the left side of the table.", snapshots:[{frame_path:"assets/scene-inventory.svg"}]};
   }
   const custodyEvents = state.demo.events.filter((event) => event.type === "picked_up");
-  if (!custodyEvents.length) return {answer:"Five objects were indexed and remain stationary. No custody events have been recorded.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
+  if (!custodyEvents.length) return {answer:"Five objects were indexed and remain stationary. No custody events have been recorded.", snapshots:[{frame_path:"assets/scene-inventory.svg"}]};
   return {answer:`${custodyEvents.length} custody event${custodyEvents.length === 1 ? " was" : "s were"} recorded. ${state.demo.inventory.filter((item) => item.state !== "missing").length} objects remain stationary.`, snapshots:custodyEvents.slice(0, 2).map((event) => ({frame_path:event.frame_path}))};
 }
 

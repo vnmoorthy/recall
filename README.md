@@ -1,200 +1,89 @@
-# Recall
+<p align="center">
+  <img src="docs/banner.svg" alt="Recall: Ctrl+F for the physical world. Edge visual memory on the SiMa.ai Modalix." width="100%">
+</p>
 
-**Ctrl+F for the physical world.** Recall is a private visual memory for rooms,
-running on a SiMa.ai Modalix DevKit. It maintains a masked object inventory,
-attributes object movement to nearby wrists, remembers events in SQLite, and
-answers typed or spoken questions with supporting snapshots.
+<p align="center">
+  <a href="https://vnmoorthy.github.io/recall/"><img alt="Website" src="https://img.shields.io/badge/website-vnmoorthy.github.io%2Frecall-4ba3ff?style=flat-square"></a>
+  <a href="https://vnmoorthy.github.io/recall/app.html"><img alt="Live demo" src="https://img.shields.io/badge/live%20demo-launch-54d68a?style=flat-square"></a>
+  <a href="https://claude.ai/artifact/EsqEXESghPZp9JTkayKznM"><img alt="Pitch deck" src="https://img.shields.io/badge/pitch%20deck-15%20slides-f0b84b?style=flat-square"></a>
+  <img alt="Tests" src="https://img.shields.io/badge/tests-40%20passed-54d68a?style=flat-square">
+  <img alt="Platform" src="https://img.shields.io/badge/runs%20on-SiMa.ai%20Modalix%20%3C%2010%20W-f5f7f8?style=flat-square">
+  <img alt="Cloud" src="https://img.shields.io/badge/cloud-none-ff4d42?style=flat-square">
+  <img alt="Python" src="https://img.shields.io/badge/python-3.12-8b9298?style=flat-square">
+</p>
 
-The product thesis is simple: continuous visual memory is not acceptable when
-home, hospital, lab, workshop, or stockroom video must be streamed to a cloud
-service. Recall keeps video, descriptions, questions, and speech inside the
-local network. The runtime contains no cloud client and the UI has no CDN,
-external font, script, or image dependency.
+<h3 align="center">A camera on one sub-10-watt chip that remembers everything in a room<br>and answers questions out loud, with the snapshot and the moment.</h3>
 
-## Interactive Demo
+<p align="center">
+  <b>“What's on the table?” &nbsp;·&nbsp; “Where's my red mug?” &nbsp;·&nbsp; “Who took the laptop?” &nbsp;·&nbsp; “What happened here in the last ten minutes?”</b>
+</p>
 
-**[Launch Recall in your browser](https://vnmoorthy.github.io/recall/)**
+<br>
 
-[![Animated Recall product walkthrough](demo/recall-product-demo-preview.gif)](https://vnmoorthy.github.io/recall/)
+<p align="center">
+  <img src="ui/assets/mug-pickup.svg" alt="Recall perception view: a person in a blue shirt lifts the red mug; the left wrist is within 41 px of the mug mask, so the pickup is attributed to that person." width="100%">
+</p>
 
-[Watch or download the 1280x720 MP4](demo/recall-product-demo.mp4) ·
-[Presenter script](docs/DEMO_SCRIPT.md) ·
-[Verification guide](docs/VERIFY_PRODUCT.md) ·
-[Reusable browser recorder](tools/record_demo.py)
+<table align="center"><tr>
+<td><b>Q</b></td><td>Where is the red mug?</td></tr><tr>
+<td><b>A</b></td><td>The person in the blue shirt picked up the red ceramic mug at 10:47:45 and moved right. It is now marked missing. <i>(1 snapshot · event #8)</i></td>
+</tr></table>
 
-This recorded cut demonstrates the offline `SIMULATION` workflow and labels it
-accordingly. A connected-DevKit recording should replace it only after the live
-hardware gates pass.
+<br>
 
-## Current State
+## Why this cannot exist in the cloud
 
-This workspace contains a hardware-backed product with a synthetic perception
-fallback. The DevKit is currently unreachable at `10.42.0.232`; during the last
-connected run:
+Continuous visual memory of a home, a hospital ward, a lab, or a stockroom is the most useful thing a camera could do. Nobody will stream that video to a server. So the memory has to live where the camera is.
 
-- Gemma 4 E2B is resident on the MLA as the temporary VLM fallback.
-- Whisper Small is resident on the MLA and transcribes through port 9998.
-- Piper runs locally on the DevKit and serves WAV speech through Recall.
-- An Insight-hosted 640x480 H.264 recording is relayed to channel 0.
-- The API, memory, question, summary, speech, and air-gapped UI paths work.
-- The aerospace operations UI auto-plays a four-stage local replay when the
-  DevKit link is unavailable. It advances the inventory, custody events,
-  evidence, and summary in place, and upgrades to live data when the API returns.
-- The exact YOLO26 segmentation and pose archives are staged in the shared
-  `models/` directory and ready for the next hardware launch.
-- Qwen3-VL still requires `llima pull` on the DevKit; the launcher uses the
-  already-verified Gemma model until Qwen is present.
+Recall runs entirely on a [SiMa.ai Modalix](https://sima.ai) MLSoC. The runtime has no cloud client. The UI loads nothing from a CDN, not a font, not a script, not an image. Frames are kept at 1 fps for 15 minutes, then deleted. People are described by clothing only, never identity. Pull the internet cable mid-demo and it keeps answering.
 
-When both YOLO archives appear in `models/`, `run_devkit.sh` automatically stops
-the preview relay and starts the combined hardware perception worker. No source
-change is required.
+## Try it in your browser
+
+**[Launch the interactive demo →](https://vnmoorthy.github.io/recall/app.html)**
+
+With no DevKit attached, the app runs a labeled `SIMULATION` replay of the four-stage scenario: five objects indexed, the mug taken, the laptop taken, then the summary. Ask it anything by text. Connect a board and the same page upgrades to live perception in place.
+
+<p align="center">
+  <a href="https://vnmoorthy.github.io/recall/app.html"><img src="docs/ui-desktop.png" alt="The Recall interface: live perception with the scenario replay, the memory query panel with an answer and two evidence frames, the object index with state pills, and the class-colored event log" width="100%"></a>
+</p>
+
+[Animated walkthrough (GIF)](demo/recall-product-demo-preview.gif) · [1280×720 MP4](demo/recall-product-demo.mp4) · [Presenter script](docs/DEMO_SCRIPT.md) · [Verification guide](docs/VERIFY_PRODUCT.md) · [Pitch deck](https://claude.ai/artifact/EsqEXESghPZp9JTkayKznM) · [Submission copy](docs/submission.md)
+
+## One chip, seven jobs
+
+Every model on the Modalix has a job no other model can do.
+
+| Model | Runs | Job in Recall |
+|---|---|---|
+| **YOLO26 instance segmentation** | every frame, on the MLA | The inventory. Pixel masks, boxes, one persistent identity per object. |
+| **YOLO26 pose** | 10 fps, on the MLA | The attribution. 17 keypoints; only the wrists matter. |
+| **Tracker** | CPU, on the frame path | The spine. Stable IDs through occlusion and re-entry within 60 s. |
+| **Qwen3-VL-4B** via LLiMa | once per object, worker thread | Names things in ≤ 5 words with their color. People by clothing only. |
+| **Same model, text mode** | per question | Answers over evidence JSON. Cites event IDs. Timestamp-grounded. |
+| **Whisper Small** | on the MLA | Spoken questions. |
+| **Piper** | CPU | Spoken answers. |
+
+The vision-language model is never on the frame path. Stop it, and inventory and events keep flowing.
 
 ## Architecture
 
-```text
-Insight RTSP / camera
-        |
-        v
-one decoded NV12 PyNeat timeline on Modalix
-        |
-        +---- H.264 VideoSender ----------------------> Insight :9000
-        |
-        +---- yolo26m-seg (every output frame) -------+--> mask/object tracker
-        |                                              |    +--> SQLite events
-        +---- video_rate -> yolo26m-pose (10 fps) -----+    +--> Insight :9100
-        |                                                   +--> 1 fps JPEG ring
-        +---- decoded frame --------------------------------+--> bounded VLM namer
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img src="docs/architecture-light.svg" alt="Recall architecture: one decoded frame timeline on the Modalix branches to segmentation, pose, and an H.264 sender; a tracker and attribution engine turn masks and wrists into typed events in SQLite; the VLM, Whisper and Piper sit off the frame path behind a single-flight lock; a FastAPI server feeds an air-gapped browser UI." width="100%">
+</picture>
 
-SQLite memory --> compact evidence JSON --> Qwen3-VL/Gemma text on MLA --> answer
-microphone ----> Whisper Small on MLA ----> same answer path ------------> Piper
+### Identity is the hard part
 
-Browser :8080 --> Recall API :8090 --> local media
-              --> Insight viewer :8081
-```
+A mug must stay `#3` through lighting flicker, a hand passing over it, and a trip off screen.
 
-Segmentation and pose share one run and one source clock so metadata aligns with
-the encoded preview. Run queues are bounded and keep the latest frame. Disk
-encoding, VLM naming, speech, question answering, and summaries stay off the
-frame path. Object identity uses same-class mask IoU or centroid distance,
-stationary naming, a 60-second reacquisition window, and persistent IDs.
+- **Match**: same class and mask IoU > 0.30, or centroid within 5 % of frame width.
+- **State machine**: `present` → `stationary` after 3 s → `carried` when a wrist is near → `missing` after 2 s unseen. Reacquire within 60 s and 8 % of the last position; otherwise a new track is born and the old one keeps its history.
+- **Attribution**: an object moves or vanishes while any wrist of person *P* was within 60 px of its mask in the last 1.5 s → `picked_up(object, P)`, with the exit direction (left, right, toward, away).
+- **Naming** happens once per track, only after it is stationary, single-flight, 24 tokens, cached by track ID.
 
-## Reference Contracts
+### Answers come from evidence, not from a caption
 
-The implementation follows the installed Neat examples under
-`/neat-resources/apps-src/examples` (the brief's `prebuilt-apps` path is absent):
-
-1. `YoloV26Seg` uses COCO-YOLO preprocessing from NV12.
-2. Segmentation boxes are `[N,6]`: `x1,y1,x2,y2,score,class_id`.
-3. Segmentation masks are `[N,160,160]` uint8 mask heads.
-4. Mask heads are projected from letterboxed model space into frame space.
-5. Insight receives frame-absolute polygons with stable object IDs.
-6. `YoloV26Pose` sets `num_classes=1`.
-7. Pose keypoints are `[N,17,3]` in COCO order; wrists are indices 9 and 10.
-8. Pose boxes are clamped; visibility filters reject unreliable wrists.
-9. Pulled samples preserve `pts_ns` and `frame_id` for Insight correlation.
-10. Naming is single-flight, bounded, retried once, and cached by track ID.
-
-## Install The Missing Models
-
-Do not compile or quantize these models. From the SDK container, authenticate
-when prompted and download the exact precompiled packages:
-
-```bash
-cd /workspace/recall
-SIMA_CLI_CHECK_FOR_UPDATE=0 sima-cli download -d models \
-  'https://docs.sima.ai/pkg_downloads/SDK2.1.3/models/modalix/yolo26-segmentation/yolo26m-seg-bf16-b1.tar.gz'
-SIMA_CLI_CHECK_FOR_UPDATE=0 sima-cli download -d models \
-  'https://docs.sima.ai/pkg_downloads/SDK2.1.3/models/modalix/yolo26-pose/yolo26m-pose-int8-b1.tar.gz'
-```
-
-The shared workspace packages were downloaded and gzip-validated on 2026-09-16:
-
-```text
-41bebbecca2f20de40c76d4bc6656c3fe369f9c139929dad93922492efa9b591  yolo26m-seg-bf16-b1.tar.gz
-dd516a687ef1a7efa3f40da5e459541aa1d2c78fcb2ecce8de74bdbe80c7a1e1  yolo26m-pose-int8-b1.tar.gz
-```
-
-On the DevKit, install the requested resident VLM:
-
-```bash
-ssh sima@10.42.0.232
-llima pull Qwen3-VL-4B-Instruct-GPTQ-a16w4
-```
-
-`run_devkit.sh` prefers Qwen automatically, then Gemma, then deterministic
-evidence rules. Whisper is expected at
-`/media/nvme/llima/models/whisper-small-a16w8`. The reviewed Piper worker and
-public-domain Kristin voice are vendored from the installed Neat GenAI Studio;
-their model binaries are installation artifacts and are gitignored.
-
-## Run
-
-Start the board services from the SDK container:
-
-```bash
-ssh sima@10.42.0.232 \
-  'cd /workspace/recall && source ~/pyneat/bin/activate && ./run_devkit.sh'
-```
-
-Use `./run_devkit.sh --restart` after deploying code or changing resident models.
-Use `./stop_devkit.sh` for a clean shutdown. On a fresh board, install local
-speech once with `./setup_tts_devkit.sh`.
-
-Start the UI in the SDK container (the shared Mac workspace can run the same
-command):
-
-```bash
-cd /workspace/recall
-./run_mac.sh
-```
-
-Open:
-
-- Recall UI: `http://127.0.0.1:8080`
-- Recall API docs: `http://10.42.0.232:8090/docs`
-- Insight control: `https://127.0.0.1:9900`
-- Insight viewer: `https://127.0.0.1:8081/static/viewer.html?mode=light&src=0&max_channels=4`
-
-With the DevKit disconnected, the UI is explicitly labeled `SIMULATION` and
-starts the four-stage scenario automatically. `REPLAY SCENARIO` runs it again;
-typed queries, object timeline filtering, evidence, and summaries remain
-interactive. Voice input stays disabled until the SiMa runtime is connected.
-
-The local replay video is adapted from the TUM RGB-D `freiburg1_desk` sequence
-by J. Sturm et al. (transcoded to VP9), licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dataset and
-required publication citation are available from the
-[TUM Computer Vision Group](https://cvg.cit.tum.de/data/datasets/rgbd-dataset).
-
-The observed direct-link addresses are `10.42.0.1` for the SDK host and
-`10.42.0.232` for the DevKit, replacing the stale `192.168.1.x` values in the
-initial brief.
-
-## API Examples
-
-```bash
-curl http://10.42.0.232:8090/health
-curl http://10.42.0.232:8090/ready
-curl http://10.42.0.232:8090/inventory
-curl 'http://10.42.0.232:8090/events?window=900&limit=500'
-curl 'http://10.42.0.232:8090/objects/1/timeline?limit=500'
-
-curl -H 'Content-Type: application/json' \
-  -d '{"question":"Who took my laptop?"}' \
-  http://10.42.0.232:8090/ask
-
-curl -F 'file=@question.wav;type=audio/wav' \
-  http://10.42.0.232:8090/ask_audio
-
-curl -H 'Content-Type: application/json' -d '{"window":900}' \
-  http://10.42.0.232:8090/summary
-
-curl -o answer.wav -H 'Content-Type: application/json' \
-  -d '{"input":"Recall is ready.","response_format":"wav"}' \
-  http://10.42.0.232:8090/v1/audio/speech
-```
-
-Question responses have this evidence-bearing shape:
+The model never sees the video. It receives a compact evidence JSON from SQLite, sized to the window the question implies, and must reply with `answer`, `event_ids`, and `object_ids`. Every cited ID is validated, every quoted time must exist in the evidence, and a hallucinated time triggers deterministic evidence rendering instead of prose.
 
 ```json
 {
@@ -207,99 +96,136 @@ Question responses have this evidence-bearing shape:
 }
 ```
 
-All VLM naming, answer, and summary prompts, responses, errors, token caps, and
-latencies are appended to `logs/vlm.jsonl`.
+## Measured on the board
 
-## Demo Script
-
-Prepare fresh evidence and run the complete presentation smoke test from the
-DevKit with one command:
-
-```bash
-ssh sima@10.42.0.232 'cd /workspace/recall && ./demo_live.sh --prepare'
-```
-
-Use `./demo_live.sh` without `--prepare` for a fast check that preserves the
-running processes.
-
-1. Show the five objects and ask, "What's on the table?"
-2. Move the mug out of frame and ask, "Where is the red mug?"
-3. Have a person take the laptop and ask, "Who took my laptop?"
-4. Disconnect upstream Ethernet and repeat step 3.
-5. Ask, "What happened here in the last ten minutes?"
-
-The synthetic fallback starts with this exact evidence state, including the two
-pickup frames, so the complete interaction can be rehearsed before the exact
-vision packages and human recordings are installed.
-
-## Measured Results
-
-Measurements below were taken on 2026-09-16 on the connected Modalix board.
+Taken 2026-09-16 on a connected Modalix DevKit, with a fallback VLM resident while the exact Qwen3-VL package awaited a SiMa login.
 
 | Path | Result |
 |---|---:|
-| Gemma cold model load | 3.536 s |
-| Gemma text warmup TTFT | 0.21 s |
-| Gemma measured generation | 32.83 tokens/s |
-| VLM crop naming (`Red mug icon`) | 0.594 s |
-| Custody question, evidence + snapshots | 2.669 s |
-| Three-sentence summary | 6.230 s |
-| Whisper Small transcription + answer | 3.774 s |
-| Piper post-prewarm synthesis/API call | 0.539 s |
-| Piper model warmup | asynchronous during service startup |
-| Test suite | 40 passed, 1 hardware-recording gate skipped |
+| Custody question, evidence + snapshots | **2.67 s** |
+| Whisper Small transcription + answer | **3.77 s** |
+| Three-sentence summary | **6.23 s** |
+| VLM crop naming | **0.59 s** |
+| Piper speech synthesis | **0.54 s** |
+| Text generation | **32.8 tok/s** |
+| Test suite | **40 passed**, 1 hardware gate skipped |
 
-The active MLA shared-memory service is `simaai-appcomplex.service`. Observed
-process RSS was approximately 158 MB preview, 471 MB GenAI server, and 173 MB
-API/Piper client. The board reported 5.8 GiB RAM and no swap. Exact segmentation
-and pose FPS remain **NOT VERIFIED** until the DevKit reconnects and runs the
-newly staged archives.
+Segmentation and pose FPS with the exact YOLO26 archives: **pending** until the DevKit reconnects and runs the staged packages. See [Verification gates](#verification-gates).
 
-## Verification Gates
+## Quickstart
+
+Requirements: a Modalix DevKit with the SiMa Neat SDK container on the host, `pyneat` in `~/pyneat` on the board, and the shared `/workspace` NFS mount. The observed direct-link addresses are `10.42.0.1` (SDK host) and `10.42.0.232` (DevKit).
+
+**1. Install the precompiled models.** Nothing is compiled or quantized. Authenticate when prompted.
+
+```bash
+cd /workspace/recall
+SIMA_CLI_CHECK_FOR_UPDATE=0 sima-cli download -d models \
+  'https://docs.sima.ai/pkg_downloads/SDK2.1.3/models/modalix/yolo26-segmentation/yolo26m-seg-bf16-b1.tar.gz'
+SIMA_CLI_CHECK_FOR_UPDATE=0 sima-cli download -d models \
+  'https://docs.sima.ai/pkg_downloads/SDK2.1.3/models/modalix/yolo26-pose/yolo26m-pose-int8-b1.tar.gz'
+ssh sima@10.42.0.232 'llima pull Qwen3-VL-4B-Instruct-GPTQ-a16w4'
+```
+
+The two YOLO26 archives were downloaded and gzip-validated into the shared `models/` directory on 2026-09-16 and are staged for the next hardware launch:
+
+```text
+41bebbecca2f20de40c76d4bc6656c3fe369f9c139929dad93922492efa9b591  yolo26m-seg-bf16-b1.tar.gz
+dd516a687ef1a7efa3f40da5e459541aa1d2c78fcb2ecce8de74bdbe80c7a1e1  yolo26m-pose-int8-b1.tar.gz
+```
+
+**2. Start the board.** `run_devkit.sh` prefers Qwen, then Gemma, then deterministic evidence rules. On a fresh board, install local speech once with `./setup_tts_devkit.sh`.
+
+```bash
+ssh sima@10.42.0.232 'cd /workspace/recall && source ~/pyneat/bin/activate && ./run_devkit.sh'
+```
+
+**3. Open the UI** from the SDK container or the shared Mac workspace.
+
+```bash
+cd /workspace/recall && ./run_mac.sh
+```
+
+| Surface | URL |
+|---|---|
+| Recall UI | `http://127.0.0.1:8080/app.html` (product site at `/`) |
+| Recall API docs | `http://10.42.0.232:8090/docs` |
+| Insight control | `https://127.0.0.1:9900` |
+| Insight viewer | `https://127.0.0.1:8081/static/viewer.html?mode=light&src=0&max_channels=4` |
+
+Use `./run_devkit.sh --restart` after deploying code, `./stop_devkit.sh` for a clean shutdown, and `./demo_live.sh --prepare` to seed fresh evidence and run the presentation smoke test.
+
+## API
+
+```bash
+curl http://10.42.0.232:8090/inventory
+curl 'http://10.42.0.232:8090/events?window=900&limit=500'
+curl 'http://10.42.0.232:8090/objects/1/timeline?limit=500'
+curl -H 'Content-Type: application/json' -d '{"question":"Who took my laptop?"}' http://10.42.0.232:8090/ask
+curl -F 'file=@question.wav;type=audio/wav' http://10.42.0.232:8090/ask_audio
+curl -H 'Content-Type: application/json' -d '{"window":900}' http://10.42.0.232:8090/summary
+curl -o answer.wav -H 'Content-Type: application/json' -d '{"input":"Recall is ready.","response_format":"wav"}' http://10.42.0.232:8090/v1/audio/speech
+```
+
+`/health`, `/ready` (503 when a local component is down), and `/status` (fps, VLM latency, resident model) round it out. Every VLM prompt, response, token cap, and latency is appended to `logs/vlm.jsonl`.
+
+## Repository
+
+```
+recall/
+  perception.py   one PyNeat graph: decode once → seg, pose, H.264, 1 fps frame ring
+  tracker.py      object + person tracks, stationary / carried / missing state machine
+  events.py       typed events, wrist attribution, exit direction
+  namer.py        single-flight VLM naming, cached per track
+  answerer.py     window parse → evidence JSON → VLM → grounded answer + snapshots
+  summarizer.py   three sentences, top-2 events by importance
+  memory.py       SQLite: objects, persons, events, frame retention
+  api.py          FastAPI on :8090
+  actions.py      Piper speech, media writers
+ui/               air-gapped browser UI (zero external requests), deployed to GitHub Pages
+docs/             architecture, demo script, submission copy, audit ledgers
+tests/            40 unit and contract tests, 1 hardware-gated e2e
+```
+
+## Privacy and retention
+
+- Runtime requests stay on the DevKit / SDK-host link. No cloud client exists in the codebase.
+- People receive clothing-only descriptions. No identity, no protected attributes, no biometrics stored.
+- Full frames are retained at 1 fps for 15 minutes and deleted by a bounded writer.
+- The simulation and hardware databases are isolated (`recall-demo.db` vs `recall.db`), so rehearsals cannot overwrite real history.
+
+## Verification gates
+
+We report what is measured, not what is planned.
 
 | Gate | Status | Evidence / remaining work |
 |---|---|---|
-| M0 baselines | NOT VERIFIED | Exact segmentation and pose packages are staged. Their live run plus the Qwen pull await DevKit reconnection. Insight H.264 ingest and Gemma crop VLM are verified. |
-| M1 tracking | PARTIAL | Mask/tracker tests pass; combined worker exists. Five real IDs, 60-second churn, and seg FPS await a connected board and clip. |
-| M2 events | PARTIAL | Unit attribution, direction, empty-scene, carried, and put-down gates pass. Recorded human clip awaits assets. |
-| M3 naming/memory | PARTIAL | MLA crop naming and one-call audit pass; 4-of-5 real color-name gate awaits the hardware perception run. |
-| M4 answers/speech | VERIFIED WITH FALLBACK VLM | 12-question evidence gate passes; typed answer, summary, Whisper, Piper, snapshots, and sub-8-second warm responses verified. Final Qwen substitution remains. |
-| M5 API/UI | PARTIAL | API and zero-CDN UI run; WAV microphone path works. Browser MediaRecorder and unplugged-browser inspection need a human browser pass. |
-| M6 live camera | NOT VERIFIED | Five repeated physical runs and backup recording need a connected camera, DevKit, and people. |
-| M7 polish | PARTIAL | Status UI, this README, and `docs/deck.md` are complete; final real FPS belongs in both. |
+| M0 baselines | NOT VERIFIED | Exact seg and pose packages are staged in `models/`; their live run and the Qwen pull await DevKit reconnection. Insight H.264 ingest and crop VLM verified. |
+| M1 tracking | PARTIAL | Mask and tracker tests pass; combined worker exists. Real IDs, 60 s churn, and seg FPS await models. |
+| M2 events | PARTIAL | Attribution, direction, empty-scene, carried, and put-down gates pass. Recorded human clip awaits assets. |
+| M3 naming / memory | PARTIAL | MLA crop naming and one-call audit pass; 4-of-5 color-name gate awaits perception models. |
+| M4 answers / speech | VERIFIED (fallback VLM) | 12-question evidence gate passes; typed answer, summary, Whisper, Piper, snapshots, sub-8 s warm responses. |
+| M5 API / UI | PARTIAL | API and zero-CDN UI run; WAV mic path works. The in-app system check (header checkmark) reports local and hardware readiness; browser MediaRecorder needs a human pass. |
+| M6 live camera | NOT VERIFIED | Five repeated physical runs need a connected camera, DevKit, and people. |
 
-## Tests
-
-Run on the DevKit with a unique cache directory. NFS can otherwise expose stale
-Python bytecode between the SDK container and board:
+Run the suite on the DevKit with a unique cache dir (NFS can expose stale bytecode between the SDK container and the board):
 
 ```bash
-ssh sima@10.42.0.232 '
-  cd /workspace/recall
-  source ~/pyneat/bin/activate
-  export PYTHONPYCACHEPREFIX=/tmp/recall-test-cache-$$
-  python3 -m pytest -q
-'
+ssh sima@10.42.0.232 'cd /workspace/recall && source ~/pyneat/bin/activate && PYTHONPYCACHEPREFIX=/tmp/recall-test-$$ python3 -m pytest -q'
 ```
 
-The recorded test remains skipped until all three input assets exist. Once an
-operator streams `assets/demo_clips/person-takes-laptop.mp4` through Insight:
+## Roadmap
 
-```bash
-RECALL_HARDWARE_E2E=1 python3 -m pytest -q tests/test_e2e_recorded.py
-```
+- Multi-camera memory through the Modalix PCIe card, objects followed across rooms.
+- Depth Anything on the MLA for metric spatial language: “left shelf, second bin”.
+- Open-vocabulary segmentation for domain inventory: instruments, pumps, tools, parts.
+- Policy-controlled retention and role-based evidence access.
+- Fleet-local analytics without centralizing raw video.
 
-## Privacy And Retention
+## Credits
 
-- Runtime requests remain on the DevKit/SDK-host link.
-- People receive clothing-only descriptions, never identity or protected traits.
-- SQLite stores object/person tracks and event references, not biometric identity.
-- Full frames are retained at 1 fps for 15 minutes and deleted by a bounded writer.
-- Naming works once per track; stopping the VLM does not stop tracking or events.
-- The synthetic and hardware databases are isolated as `recall-demo.db` and
-  `recall.db`, so rehearsals cannot overwrite real history.
+Built at the [AI Infra Summit Hackathon 2026](https://lablab.ai/ai-hackathons/ai-infra-summit-hackathon), Santa Clara, on the SiMa.ai track, with the Modalix DevKit, Palette Neat SDK, and LLiMa.
 
-See `docs/deck.md` for the six-slide presentation outline,
-`docs/iterations-50.md` and `docs/iterations-100.md` for both product-audit
-rounds, and `config.yaml` for all source, model, tracking, memory, API, and
-Insight settings.
+The offline replay video is adapted from the TUM RGB-D `freiburg1_desk` sequence by J. Sturm et al. (transcoded to VP9), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Dataset and citation: [TUM Computer Vision Group](https://cvg.cit.tum.de/data/datasets/rgbd-dataset).
+
+Archivo and IBM Plex Mono are used under the SIL Open Font License (see `ui/fonts/OFL.txt`).
