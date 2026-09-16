@@ -40,12 +40,22 @@
       <div class="live-pane">
         <div class="section-heading">
           <div><span class="section-index">01</span><span class="eyebrow">LIVE PERCEPTION</span></div>
-          <div class="feed-state"><i></i><span id="feed-state">ACQUIRING</span></div>
+          <div class="scenario-tools">
+            <div class="feed-state"><i></i><span id="feed-state">ACQUIRING</span></div>
+            <button id="scenario-button" class="scenario-button" type="button"><span id="scenario-icon" aria-hidden="true">&#9654;</span><span id="scenario-action">RUN SCENARIO</span></button>
+          </div>
         </div>
         <div class="viewer-frame demo-mode" id="viewer-frame">
           <iframe id="live-view" title="Recall live camera feed"></iframe>
-          <img id="demo-view" class="demo-view" src="assets/scene-now.jpg" alt="Recall demonstration room feed">
+          <video id="demo-view" class="demo-view" src="assets/demo-desk.webm" poster="assets/scene-inventory.jpg" autoplay muted loop playsinline aria-label="Local demonstration desk feed"></video>
           <div id="viewer-fallback" class="viewer-fallback"><span>OPTICAL LINK</span><strong>CAMERA 01</strong><small>WAITING FOR VIDEO TRANSPORT</small></div>
+          <div id="scenario-alert" class="scenario-alert" aria-live="polite">
+            <span id="scenario-kicker">SIMULATION READY</span>
+            <strong id="scenario-message">FIVE OBJECTS INDEXED</strong>
+          </div>
+          <div id="scenario-progress" class="scenario-progress" aria-label="Demo scenario progress">
+            <span data-step="0">INDEX</span><span data-step="1">MUG</span><span data-step="2">LAPTOP</span><span data-step="3">SUMMARY</span>
+          </div>
           <div class="feed-hud" aria-hidden="true"><span>CAM 01 // 640x480</span><time id="feed-clock">00:00:00 UTC</time></div>
           <div class="reticle reticle-a" aria-hidden="true"></div>
           <div class="reticle reticle-b" aria-hidden="true"></div>

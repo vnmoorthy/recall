@@ -21,8 +21,9 @@ fallback. On the connected DevKit at `10.42.0.232`:
 - Piper runs locally on the DevKit and serves WAV speech through Recall.
 - An Insight-hosted 640x480 H.264 recording is relayed to channel 0.
 - The API, memory, question, summary, speech, and air-gapped UI paths work.
-- The aerospace operations UI includes an immediate, interactive local evidence
-  demo when the DevKit link is unavailable and upgrades to live data in place.
+- The aerospace operations UI auto-plays a four-stage local replay when the
+  DevKit link is unavailable. It advances the inventory, custody events,
+  evidence, and summary in place, and upgrades to live data when the API returns.
 - The exact YOLO26 segmentation/pose archives and Qwen3-VL model are not
   installed because SiMa device authentication requires a human login.
 
@@ -128,6 +129,17 @@ Open:
 - Recall API docs: `http://10.42.0.232:8090/docs`
 - Insight control: `https://127.0.0.1:9900`
 - Insight viewer: `https://127.0.0.1:8081/static/viewer.html?mode=light&src=0&max_channels=4`
+
+With the DevKit disconnected, the UI is explicitly labeled `SIMULATION` and
+starts the four-stage scenario automatically. `REPLAY SCENARIO` runs it again;
+typed queries, object timeline filtering, evidence, and summaries remain
+interactive. Voice input stays disabled until the SiMa runtime is connected.
+
+The local replay video is adapted from the TUM RGB-D `freiburg1_desk` sequence
+by J. Sturm et al. (transcoded to VP9), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The dataset and
+required publication citation are available from the
+[TUM Computer Vision Group](https://cvg.cit.tum.de/data/datasets/rgbd-dataset).
 
 The observed direct-link addresses are `10.42.0.1` for the SDK host and
 `10.42.0.232` for the DevKit, replacing the stale `192.168.1.x` values in the

@@ -24,10 +24,16 @@ const state = {
   selectedObject: null,
   demoMode: false,
   demo: null,
+  demoBase: null,
+  demoPhase: 0,
+  scenarioTimer: null,
+  scenarioRunning: false,
+  scenarioPlayed: false,
 };
 
 const byId = (id) => document.getElementById(id);
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
+const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 const mediaUrl = (path) => {
   if (!path) return "";
   if (String(path).startsWith("assets/")) return String(path);
@@ -61,8 +67,20 @@ function demoDataset() {
     {id:5, ts:now-480, type:"object_appeared", object_id:5, object_name:"blue hardcover book", object_class:"book", frame_path:"assets/scene-inventory.jpg"},
     {id:4, ts:now-480, type:"object_appeared", object_id:4, object_name:"black cell phone", object_class:"cell phone", frame_path:"assets/scene-inventory.jpg"},
     {id:3, ts:now-480, type:"object_appeared", object_id:3, object_name:"green water bottle", object_class:"bottle", frame_path:"assets/scene-inventory.jpg"},
+    {id:2, ts:now-480, type:"object_appeared", object_id:2, object_name:"silver laptop", object_class:"laptop", frame_path:"assets/scene-inventory.jpg"},
+    {id:1, ts:now-480, type:"object_appeared", object_id:1, object_name:"red ceramic mug", object_class:"cup", frame_path:"assets/scene-inventory.jpg"},
   ];
   return {inventory, events};
+}
+
+function demoStateForPhase(phase) {
+  if (!state.demoBase) state.demoBase = demoDataset();
+  const cutoff = [5, 7, 9, 10][phase] ?? 10;
+  const inventory = state.demoBase.inventory.map((item) => {
+    const missing = (item.id === 1 && phase >= 1) || (item.id === 2 && phase >= 2);
+    return {...item, state:missing ? "missing" : "stationary", seconds_since_seen:missing ? (item.id === 1 ? 182 : 64) : item.seconds_since_seen};
+  });
+  return {inventory, events:state.demoBase.events.filter((event) => event.id <= cutoff)};
 }
 
 function formatAge(seconds) {
@@ -78,7 +96,7 @@ function formatEventTime(timestamp) {
 
 function setQuestionBusy(busy) {
   byId("ask-button").disabled = busy;
-  byId("mic-button").disabled = busy;
+  byId("mic-button").disabled = busy || state.demoMode;
   byId("question").disabled = busy;
   byId("query-state").textContent = busy ? "PROCESSING" : "READY";
 }
@@ -114,10 +132,10 @@ function renderStatus(status) {
   if (status.demo) {
     byId("seg-fps").textContent = "DEMO";
     byId("pose-fps").textContent = "DEMO";
-    byId("object-count").textContent = "5";
+    byId("object-count").textContent = status.objects_tracked || "5";
     byId("vlm-calls").textContent = "--";
     byId("vlm-latency").textContent = "--";
-    byId("tts-status").textContent = "DEMO AUDIO";
+    byId("tts-status").textContent = "VOICE LINK OFFLINE";
     byId("model-name").textContent = "SIMA HARDWARE PROFILE // OFFLINE";
   } else {
   byId("seg-fps").textContent = `${Number(status.seg_fps || 0).toFixed(1)} FPS`;
@@ -135,21 +153,94 @@ function renderStatus(status) {
   mode.title = `Metadata errors: ${status.metadata_errors || 0}; frame errors: ${status.frame_write_errors || 0}; track drops: ${status.track_write_drops || 0}; speech errors: ${status.speech_playback_errors || 0}`;
 }
 
-function activateDemo() {
-  state.demoMode = true;
-  state.demo = demoDataset();
-  byId("viewer-frame").classList.add("demo-mode");
-  byId("feed-state").textContent = "DEMO FEED";
-  const mode = byId("mode-badge");
-  byId("offline-badge").textContent = "LOCAL ONLY";
-  renderStatus({demo:true, perception_mode:"demo", mode_label:"demo ready"});
+const scenarioSteps = [
+  {kicker:"01 // INVENTORY LOCK", message:"5 OBJECTS ACQUIRED", className:"", question:"What's on the table?", answer:"Five objects indexed: red ceramic mug, silver laptop, green water bottle, black cell phone, and blue hardcover book.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]},
+  {kicker:"02 // PICKUP DETECTED", message:"RED CERAMIC MUG // EXIT RIGHT", className:"event", question:"Where is the red mug?", answer:"Pickup detected. The person in the blue shirt moved the red ceramic mug right and out of frame.", snapshots:[{frame_path:"assets/mug-pickup.jpg"}]},
+  {kicker:"03 // CUSTODY EVENT", message:"SILVER LAPTOP // EXIT LEFT", className:"event", question:"Who took my laptop?", answer:"Custody event recorded. The person in the blue shirt picked up the silver laptop and moved left.", snapshots:[{frame_path:"assets/laptop-pickup.jpg"}]},
+  {kicker:"04 // MEMORY READY", message:"2 EVENTS // 2 EVIDENCE FRAMES", className:"complete", question:"What happened in the last ten minutes?", answer:"The red mug moved right and the silver laptop moved left with the person in the blue shirt. Three objects remain stationary.", snapshots:[{frame_path:"assets/mug-pickup.jpg"},{frame_path:"assets/laptop-pickup.jpg"}]},
+];
+
+function updateScenarioButton() {
+  const button = byId("scenario-button");
+  button.classList.toggle("running", state.scenarioRunning);
+  byId("scenario-icon").textContent = state.scenarioRunning ? "\u25A0" : state.scenarioPlayed ? "\u21BB" : "\u25B6";
+  byId("scenario-action").textContent = state.scenarioRunning ? "STOP SCENARIO" : state.scenarioPlayed ? "REPLAY SCENARIO" : "RUN SCENARIO";
+}
+
+function stopScenario(completed = false) {
+  clearTimeout(state.scenarioTimer);
+  state.scenarioTimer = null;
+  state.scenarioRunning = false;
+  updateScenarioButton();
+  byId("query-state").textContent = completed ? "COMPLETE" : "PAUSED";
+}
+
+function renderDemoPhase(phase, announce = false) {
+  state.demoPhase = Math.max(0, Math.min(phase, scenarioSteps.length - 1));
+  state.demo = demoStateForPhase(state.demoPhase);
+  const step = scenarioSteps[state.demoPhase];
+  const alert = byId("scenario-alert");
+  alert.className = `scenario-alert ${step.className}`.trim();
+  byId("scenario-kicker").textContent = step.kicker;
+  byId("scenario-message").textContent = step.message;
+  document.querySelectorAll("#scenario-progress [data-step]").forEach((item) => {
+    const itemStep = Number(item.dataset.step);
+    item.classList.toggle("done", itemStep < state.demoPhase);
+    item.classList.toggle("active", itemStep === state.demoPhase);
+  });
+  const video = byId("demo-view");
+  try { video.currentTime = [0, 6, 11, 16][state.demoPhase]; } catch (_error) { /* Video metadata is still loading. */ }
+  video.play().catch(() => {});
   const events = state.selectedObject ? state.demo.events.filter((event) => event.object_id === state.selectedObject) : state.demo.events;
   renderInventory(state.demo.inventory);
   renderEvents(events);
+  if (announce) {
+    byId("question").value = step.question;
+    byId("answer").textContent = step.answer;
+    renderSnapshots(step.snapshots);
+  }
+}
+
+function activateDemo() {
+  state.demoMode = true;
+  byId("viewer-frame").classList.add("demo-mode");
+  byId("feed-state").textContent = "LOCAL REPLAY";
+  byId("offline-badge").textContent = "LOCAL ONLY";
+  byId("mic-button").disabled = true;
+  byId("mic-button").title = "Voice input requires the connected SiMa runtime";
+  renderStatus({demo:true, objects_tracked:5, perception_mode:"demo", mode_label:"simulation"});
+  renderDemoPhase(state.demoPhase);
+}
+
+function runScenario() {
+  if (state.scenarioRunning) {
+    stopScenario(false);
+    return;
+  }
+  state.demoMode = true;
+  state.scenarioRunning = true;
+  state.scenarioPlayed = true;
+  state.selectedObject = null;
+  byId("timeline-title").textContent = "EVENT LOG";
+  byId("all-events").hidden = true;
+  byId("viewer-frame").classList.add("demo-mode");
+  updateScenarioButton();
+  let phase = 0;
+  const advance = () => {
+    byId("query-state").textContent = `SCENARIO ${phase + 1}/4`;
+    renderDemoPhase(phase, true);
+    if (phase < scenarioSteps.length - 1) {
+      phase += 1;
+      state.scenarioTimer = setTimeout(advance, 1800);
+    } else {
+      state.scenarioTimer = setTimeout(() => stopScenario(true), 1000);
+    }
+  };
+  advance();
 }
 
 async function refresh() {
-  if (document.hidden) return;
+  if (document.hidden || state.scenarioRunning) return;
   if (state.refreshing) {
     state.refreshQueued = true;
     return;
@@ -158,9 +249,13 @@ async function refresh() {
   try {
     const eventPath = state.selectedObject ? `/objects/${state.selectedObject}/timeline?limit=500` : "/events?window=900&limit=500";
     const [status, inventory, events] = await Promise.all([json("/status"), json("/inventory"), json(eventPath)]);
+    if (state.scenarioRunning) stopScenario(false);
     state.demoMode = false;
     byId("viewer-frame").classList.remove("demo-mode");
     byId("feed-state").textContent = "LIVE LINK";
+    byId("query-state").textContent = "READY";
+    byId("mic-button").disabled = false;
+    byId("mic-button").title = "Ask by voice";
     renderStatus(status);
     renderInventory(inventory);
     renderEvents(events);
@@ -178,22 +273,33 @@ async function refresh() {
 function demoAnswer(question) {
   const words = question.toLowerCase();
   if (words.includes("table") || words.includes("inventory")) {
-    return {answer:"Three objects remain in view: the green water bottle, black cell phone, and blue hardcover book.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
+    const names = state.demo.inventory.filter((item) => item.state !== "missing").map((item) => item.name);
+    return {answer:`${names.length} objects remain in view: ${names.join(", ")}.`, snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
   }
   if (words.includes("laptop")) {
-    return {answer:"The person in the blue shirt picked up the silver laptop and moved left. It is now marked missing.", snapshots:[{frame_path:"assets/laptop-pickup.jpg"}]};
+    const missing = state.demo.inventory.find((item) => item.id === 2)?.state === "missing";
+    return missing
+      ? {answer:"The person in the blue shirt picked up the silver laptop and moved left. It is now marked missing.", snapshots:[{frame_path:"assets/laptop-pickup.jpg"}]}
+      : {answer:"The silver laptop is still present near the center of the table.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
   }
   if (words.includes("mug") || words.includes("cup")) {
-    return {answer:"The person in the blue shirt picked up the red ceramic mug and moved right. It is now marked missing.", snapshots:[{frame_path:"assets/mug-pickup.jpg"}]};
+    const missing = state.demo.inventory.find((item) => item.id === 1)?.state === "missing";
+    return missing
+      ? {answer:"The person in the blue shirt picked up the red ceramic mug and moved right. It is now marked missing.", snapshots:[{frame_path:"assets/mug-pickup.jpg"}]}
+      : {answer:"The red ceramic mug is still present on the left side of the table.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
   }
-  return {answer:"Two custody events were recorded: the red mug moved right and the silver laptop moved left. Three objects remain stationary.", snapshots:[{frame_path:"assets/mug-pickup.jpg"},{frame_path:"assets/laptop-pickup.jpg"}]};
+  const custodyEvents = state.demo.events.filter((event) => event.type === "picked_up");
+  if (!custodyEvents.length) return {answer:"Five objects were indexed and remain stationary. No custody events have been recorded.", snapshots:[{frame_path:"assets/scene-inventory.jpg"}]};
+  return {answer:`${custodyEvents.length} custody event${custodyEvents.length === 1 ? " was" : "s were"} recorded. ${state.demo.inventory.filter((item) => item.state !== "missing").length} objects remain stationary.`, snapshots:custodyEvents.slice(0, 2).map((event) => ({frame_path:event.frame_path}))};
 }
 
 async function ask(question) {
+  if (state.scenarioRunning) stopScenario(false);
   setQuestionBusy(true);
   byId("answer").textContent = "Searching indexed visual memory...";
   renderSnapshots([]);
   try {
+    if (state.demoMode) await delay(650);
     const result = state.demoMode ? demoAnswer(question) : await json("/ask", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({question})});
     byId("answer").textContent = result.answer;
     renderSnapshots(result.snapshots);
@@ -230,6 +336,8 @@ byId("ask-form").addEventListener("submit", (event) => {
   ask(question);
 });
 
+byId("scenario-button").addEventListener("click", runScenario);
+
 document.querySelectorAll("[data-question]").forEach((button) => {
   button.addEventListener("click", () => {
     byId("question").value = button.dataset.question;
@@ -238,11 +346,13 @@ document.querySelectorAll("[data-question]").forEach((button) => {
 });
 
 byId("summary-button").addEventListener("click", async () => {
+  if (state.scenarioRunning) stopScenario(false);
   const button = byId("summary-button");
   button.disabled = true;
   byId("query-state").textContent = "SUMMARIZING";
   byId("answer").textContent = "Building mission summary...";
   try {
+    if (state.demoMode) await delay(750);
     const result = state.demoMode ? demoAnswer("summary") : await json("/summary", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({window:600})});
     byId("answer").textContent = result.summary || result.answer;
     renderSnapshots(result.snapshots);
@@ -329,6 +439,10 @@ byId("live-view").src = state.insight;
 updateClock();
 setInterval(updateClock, 1000);
 activateDemo();
+updateScenarioButton();
 refresh();
-setInterval(refresh, 5000);
+setTimeout(() => {
+  if (state.demoMode && !state.scenarioPlayed) runScenario();
+}, 900);
+setInterval(refresh, 15000);
 document.addEventListener("visibilitychange", refresh);
