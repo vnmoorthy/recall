@@ -38,3 +38,27 @@ def test_people_tracker_keeps_distinct_ids():
     second = tracker.update([PersonDetection((3, 0, 53, 100), 0.9), PersonDetection((97, 0, 147, 100), 0.8)], 0.1)
     assert [p.id for p in first] == [1, 2]
     assert [p.id for p in second] == [1, 2]
+    assert all(p.missing_frames == 0 for p in first)
+
+
+def test_zero_timestamp_can_still_become_stationary():
+    tracker = ObjectTracker()
+    tracker.update([object_detection(30)], 0.0, 200)
+    tracker.update([object_detection(30)], 1.0, 200)
+    visible = tracker.update([object_detection(30)], 3.1, 200)
+    assert visible[0].state == "stationary"
+
+
+def test_expired_missing_track_releases_its_mask():
+    tracker = ObjectTracker(reacquire_seconds=5)
+    tracker.update([object_detection(30)], 0.0, 200)
+    tracker.update([], 2.1, 200)
+    assert tracker.tracks[1].state == "missing"
+    tracker.update([], 5.1, 200)
+    assert 1 not in tracker.tracks
+
+
+def test_empty_mask_detection_is_rejected():
+    tracker = ObjectTracker()
+    empty = ObjectDetection(1, "cup", 0.9, np.zeros((100, 200), np.uint8))
+    assert tracker.update([empty], 0.0, 200) == []

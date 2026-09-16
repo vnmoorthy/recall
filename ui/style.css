@@ -27,7 +27,7 @@ button { cursor: pointer; }
 .badge.error { color: var(--red); border-color: #7b3935; }
 .icon-button { border: 1px solid var(--line); background: var(--surface-2); color: var(--text); width: 34px; height: 34px; border-radius: 5px; font-size: 17px; }
 .icon-button:hover, .secondary-button:hover { border-color: var(--blue); }
-.status-strip { min-height: 64px; display: grid; grid-template-columns: repeat(5, minmax(90px, 1fr)) minmax(220px, 2fr); border-bottom: 1px solid var(--line); background: var(--surface); }
+.status-strip { min-height: 64px; display: grid; grid-template-columns: repeat(6, minmax(86px, 1fr)) minmax(220px, 2fr); border-bottom: 1px solid var(--line); background: var(--surface); }
 .status-strip > div { padding: 12px 18px; border-right: 1px solid var(--line); min-width: 0; }
 .status-strip span { display: block; color: var(--muted); font-size: 10px; font-weight: 700; margin-bottom: 5px; }
 .status-strip strong { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -47,6 +47,10 @@ main { width: 100%; }
 input { width: 100%; height: 38px; border: 1px solid var(--line); border-radius: 5px; background: #0f1211; color: var(--text); padding: 0 11px; outline: none; }
 input:focus { border-color: var(--blue); }
 .mic.recording { color: var(--red); border-color: var(--red); }
+.mic-icon { display: inline-block; position: relative; width: 9px; height: 15px; border: 2px solid currentColor; border-radius: 5px; }
+.mic-icon::after { content: ""; position: absolute; left: 2px; bottom: -6px; width: 5px; height: 5px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
+.mic.recording .mic-icon { color: var(--red); }
+.send-button:disabled, .secondary-button:disabled, .icon-button:disabled, input:disabled { cursor: wait; opacity: .55; }
 .send-button { border: 1px solid #2f8d5a; background: #236a45; color: white; border-radius: 5px; font-weight: 700; padding: 0 14px; min-height: 36px; }
 .answer { margin: 14px 0; min-height: 72px; padding: 13px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 16px; line-height: 1.5; }
 .snapshot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

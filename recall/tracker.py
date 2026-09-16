@@ -127,8 +127,9 @@ class PersonTracker:
                 track = self.tracks[track_id]
                 track.bbox, track.wrists, track.last_seen = detection.bbox, detection.wrists, timestamp
                 track.missing_frames, track.score = 0, detection.score
+        active_track_ids = set(assigned.values())
         for track_id, track in list(self.tracks.items()):
-            if track_id not in used_tracks and track_id not in matches.values():
+            if track_id not in active_track_ids:
                 track.missing_frames += 1
                 if track.missing_frames > self.max_missing_frames:
                     del self.tracks[track_id]
@@ -157,6 +158,11 @@ class ObjectTracker:
     def update(
         self, detections: list[ObjectDetection], timestamp: float, frame_width: int
     ) -> list[ObjectTrack]:
+        detections = [
+            detection for detection in detections
+            if mask_area(detection.mask) > 0
+            and all(math.isfinite(value) for value in detection.center())
+        ]
         centers = [d.center() for d in detections]
         candidates: list[tuple[float, int, int]] = []
         for track_id, track in self.tracks.items():
@@ -201,7 +207,8 @@ class ObjectTracker:
                 velocity = (center[0] - prior[0], center[1] - prior[1])
                 motion = math.dist(prior, center)
                 if motion < 0.01 * frame_width:
-                    track.stationary_since = track.stationary_since or timestamp
+                    if track.stationary_since is None:
+                        track.stationary_since = timestamp
                     if timestamp - track.stationary_since >= self.stationary_seconds:
                         track.state = "stationary"
                     elif track.state == "missing":
@@ -214,11 +221,14 @@ class ObjectTracker:
                 track.mask, track.last_seen, track.score = detection.mask.copy(), timestamp, detection.score
             visible.append(track)
 
-        for track_id, track in self.tracks.items():
-            if track_id in used_tracks or track_id in matches.values() or track in visible:
+        visible_ids = {track.id for track in visible}
+        for track_id, track in list(self.tracks.items()):
+            if track_id in visible_ids:
                 continue
             if timestamp - track.last_seen >= self.missing_seconds:
                 track.state = "missing"
+            if timestamp - track.last_seen > self.reacquire_seconds:
+                del self.tracks[track_id]
         return visible
 
     def set_carried(self, track_id: int) -> None:

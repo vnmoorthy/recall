@@ -13,9 +13,16 @@ from pathlib import Path
 from urllib import request
 
 from .memory import Memory
+from .vlm_lock import exclusive_vlm
 
 
 WINDOW_RE = re.compile(r"\blast\s+(\d+)\s*(minute|minutes|hour|hours)\b", re.I)
+
+
+def clean_model_text(value, limit: int) -> str:
+    text = " ".join(str(value or "").split())
+    text = re.sub(r"([.!?])(?=[A-Z])", r"\1 ", text)
+    return text[:limit].strip()
 
 
 def parse_window(question: str, now: float | None = None) -> int:
@@ -24,12 +31,12 @@ def parse_window(question: str, now: float | None = None) -> int:
         amount = int(match.group(1))
         return amount * (3600 if match.group(2).lower().startswith("hour") else 60)
     if re.search(r"\btoday\b", question, re.I):
-        current = datetime.fromtimestamp(now or time.time(), timezone.utc)
+        current = datetime.fromtimestamp(time.time() if now is None else now, timezone.utc)
         return max(1, current.hour * 3600 + current.minute * 60 + current.second)
     return 15 * 60
 
 
-def _where(centroid: list[float], frame_width: float = 1.0) -> str:
+def _where(centroid: list[float], frame_width: float = 800.0) -> str:
     x = float(centroid[0])
     ratio = x / max(frame_width, 1.0) if x > 1.0 else x
     return "left" if ratio < 1 / 3 else "right" if ratio > 2 / 3 else "center"
@@ -54,6 +61,7 @@ def build_context(memory: Memory, window: int, now: float | None = None) -> dict
         events.append(
             {
                 "id": event["id"],
+                "timestamp": int(event["ts"]),
                 "time": datetime.fromtimestamp(event["ts"], timezone.utc).strftime("%H:%M:%S"),
                 "type": event["type"],
                 "object": event["object_name"] or event["object_class"],
@@ -71,7 +79,10 @@ def parse_json_response(text: str) -> dict:
     start, end = cleaned.find("{"), cleaned.rfind("}")
     if start < 0 or end < start:
         raise ValueError("model response did not contain a JSON object")
-    return json.loads(cleaned[start : end + 1])
+    value = json.loads(cleaned[start : end + 1])
+    if not isinstance(value, dict):
+        raise ValueError("model response JSON must be an object")
+    return value
 
 
 @dataclass
@@ -98,7 +109,7 @@ class LocalVLMClient:
             {"Content-Type": "application/json"},
         )
         try:
-            with request.urlopen(req, timeout=self.timeout) as response:
+            with exclusive_vlm(timeout=self.timeout), request.urlopen(req, timeout=self.timeout) as response:
                 body = json.load(response)
             response_text = body["choices"][0]["message"]["content"]
             return response_text, (time.perf_counter() - started) * 1000.0
@@ -145,15 +156,36 @@ class Answerer:
                 result = self._fallback(question, context)
         else:
             result = self._fallback(question, context)
-        event_ids = [int(value) for value in result.get("event_ids", []) if str(value).isdigit()]
-        object_ids = [int(value) for value in result.get("object_ids", []) if str(value).isdigit()]
+        raw_event_ids = result.get("event_ids", [])
+        raw_object_ids = result.get("object_ids", [])
+        if not isinstance(raw_event_ids, list):
+            raw_event_ids = []
+        if not isinstance(raw_object_ids, list):
+            raw_object_ids = []
+        event_ids = []
+        for value in raw_event_ids[:20]:
+            if str(value).isdigit() and self.memory.event_by_id(int(value)):
+                if int(value) not in event_ids:
+                    event_ids.append(int(value))
+        inventory_ids = {item["id"] for item in self.memory.inventory()}
+        object_ids = []
+        for value in raw_object_ids[:20]:
+            if str(value).isdigit() and int(value) in inventory_ids and int(value) not in object_ids:
+                object_ids.append(int(value))
         snapshots = []
+        snapshot_paths = set()
         for event_id in event_ids:
             event = self.memory.event_by_id(event_id)
             if event and (event.get("frame_path") or event.get("crop_path")):
-                snapshots.append({"event_id": event_id, "frame_path": event.get("frame_path"), "crop_path": event.get("crop_path")})
+                key = event.get("frame_path") or event.get("crop_path")
+                if key not in snapshot_paths:
+                    snapshots.append({"event_id": event_id, "frame_path": event.get("frame_path"), "crop_path": event.get("crop_path")})
+                    snapshot_paths.add(key)
+        answer = clean_model_text(result.get("answer", ""), 1200)
+        if not answer:
+            answer = "I do not have enough visual memory to answer that."
         return {
-            "answer": str(result.get("answer", "I do not have enough visual memory to answer that.")),
+            "answer": answer,
             "event_ids": event_ids,
             "object_ids": object_ids,
             "snapshots": snapshots[:2],

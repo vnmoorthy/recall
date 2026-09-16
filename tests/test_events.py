@@ -39,5 +39,15 @@ def test_near_wrist_motion_becomes_carried_then_put_down():
     assert any(event.type == "picked_up" for event in events)
     assert moving.state == "carried"
     placed = track("stationary", (90, 50))
-    events = engine.update(FrameState(3.0, 200, 120, (placed,), ()))
-    assert any(event.type == "put_down" for event in events)
+    events = engine.update(FrameState(10.0, 200, 120, (placed,), ()))
+    put_down = next(event for event in events if event.type == "put_down")
+    assert put_down.person_id == 7
+
+
+def test_missing_pickup_reappearance_is_put_down_by_carrier():
+    engine = EventEngine()
+    engine.update(FrameState(1, 200, 120, (track("present"),), (person(),)))
+    engine.update(FrameState(2, 200, 120, (track("missing"),), (person(),)))
+    events = engine.update(FrameState(20, 200, 120, (track("present"),), ()))
+    put_down = next(event for event in events if event.type == "put_down")
+    assert put_down.person_id == 7

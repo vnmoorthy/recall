@@ -32,6 +32,19 @@ class PiperEngine:
         self._tts_class = module.PiperTTS
         self._tts = None
         self._lock = threading.Lock()
+        self.ready = False
+        self.error: str | None = None
+
+    def warm(self) -> None:
+        with self._lock:
+            if self._tts is None:
+                try:
+                    self._tts = self._tts_class(model_path=self.model_path)
+                    self.ready = True
+                    self.error = None
+                except Exception as exc:
+                    self.error = str(exc)
+                    raise
 
     def synthesize(self, text: str) -> bytes:
         if not text.strip():
@@ -39,6 +52,7 @@ class PiperEngine:
         with self._lock:
             if self._tts is None:
                 self._tts = self._tts_class(model_path=self.model_path)
+                self.ready = True
             return self._tts.synthesize(text.strip()).read()
 
     def close(self) -> None:
@@ -56,7 +70,20 @@ class Speaker:
         self.queue: Queue[str] = Queue(maxsize=2)
         self.stop_event = threading.Event()
         self.thread = threading.Thread(target=self._run, name="recall-speaker", daemon=True)
+        self.warm_thread = threading.Thread(target=self._warm, name="recall-piper-warm", daemon=True)
+        self.warm_thread.start()
         self.thread.start()
+
+    def _warm(self) -> None:
+        try:
+            self.engine.warm()
+        except Exception:
+            pass
+
+    def status(self) -> str:
+        if self.engine.ready:
+            return "piper-ready"
+        return "piper-error" if self.engine.error else "piper-warming"
 
     def synthesize(self, text: str) -> bytes:
         return self.engine.synthesize(text)
@@ -70,11 +97,12 @@ class Speaker:
 
     def close(self) -> None:
         self.stop_event.set()
-        self.thread.join(timeout=2)
+        self.thread.join(timeout=30)
+        self.warm_thread.join(timeout=30)
         self.engine.close()
 
     def _run(self) -> None:
-        while not self.stop_event.is_set():
+        while not self.stop_event.is_set() or not self.queue.empty():
             try:
                 text = self.queue.get(timeout=0.2)
             except Empty:

@@ -28,6 +28,7 @@ class EventEngine:
         self.attribution_seconds = attribution_seconds
         self.previous: FrameState | None = None
         self.wrist_history: deque[tuple[float, int, tuple[tuple[float, float], ...]]] = deque()
+        self.carriers: dict[int, int] = {}
 
     def _remember_wrists(self, state: FrameState) -> None:
         for person in state.persons:
@@ -67,6 +68,8 @@ class EventEngine:
 
         old_objects = {obj.id: obj for obj in self.previous.objects}
         new_objects = {obj.id: obj for obj in state.objects}
+        for retired_id in old_objects.keys() - new_objects.keys():
+            self.carriers.pop(retired_id, None)
         old_people = {person.id for person in self.previous.persons}
         new_people = {person.id for person in state.persons}
         events.extend(Event(state.timestamp, "person_entered", person_id=person_id, frame_path=state.frame_path) for person_id in sorted(new_people - old_people))
@@ -78,19 +81,25 @@ class EventEngine:
                 if obj.state != "missing":
                     events.append(Event(state.timestamp, "object_appeared", object_id, frame_path=state.frame_path))
                 continue
-            person_id = self._attributed_person(old)
+            person_id = self._attributed_person(old) or self.carriers.get(object_id)
             if old.state != "missing" and obj.state == "missing":
                 direction = self._direction(obj)
                 events.append(Event(state.timestamp, "object_missing", object_id, person_id, direction, state.frame_path))
                 if person_id is not None:
+                    self.carriers[object_id] = person_id
                     events.append(Event(state.timestamp, "picked_up", object_id, person_id, direction, state.frame_path))
-            if old.state == "carried" and obj.state in {"present", "stationary"}:
+            if (
+                old.state == "carried"
+                or (old.state == "missing" and object_id in self.carriers)
+            ) and obj.state in {"present", "stationary"}:
                 events.append(Event(state.timestamp, "put_down", object_id, person_id, frame_path=state.frame_path))
+                self.carriers.pop(object_id, None)
             shift = math.dist(old.centroid, obj.centroid)
             if obj.state != "missing" and shift > 0.08 * state.frame_width:
                 events.append(Event(state.timestamp, "object_moved", object_id, person_id, self._direction(obj), state.frame_path))
                 if person_id is not None and old.state != "carried":
                     obj.state = "carried"
+                    self.carriers[object_id] = person_id
                     events.append(Event(state.timestamp, "picked_up", object_id, person_id, self._direction(obj), state.frame_path))
 
         self.previous = state

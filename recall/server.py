@@ -39,7 +39,8 @@ def main() -> int:
     )
     try:
         speaker = Speaker(PiperEngine(root))
-    except (FileNotFoundError, RuntimeError):
+    except Exception as exc:
+        print(f"local speech unavailable: {exc}", flush=True)
         speaker = None
     app = create_app(
         memory,

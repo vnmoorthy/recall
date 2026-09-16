@@ -1,8 +1,12 @@
 import json
+import time
 
 import numpy as np
 
-from recall.perception import _crop_for_track, _pose_metadata, _segmentation_metadata
+from recall.perception import (
+    FrameWriter, PerceptionConfig, TrackWriter, _crop_for_track, _pose_metadata,
+    _segmentation_metadata, _validate_config,
+)
 from recall.tracker import FrameState, ObjectTrack
 
 
@@ -18,7 +22,9 @@ def test_stable_segmentation_id_and_frame_polygon():
     assert payload["segments"][0]["id"] == "17"
     assert payload["segments"][0]["label"] == "red mug"
     assert len(payload["segments"][0]["mask"]) >= 4
-    assert _crop_for_track(np.zeros((80, 120, 3), np.uint8), track).startswith(b"\xff\xd8")
+    crop = _crop_for_track(np.zeros((80, 120, 3), np.uint8), track)
+    assert crop is not None
+    assert crop.shape[0] > 30 and crop.shape[1] > 40
 
 
 def test_pose_metadata_has_coco_keypoints():
@@ -30,3 +36,52 @@ def test_pose_metadata_has_coco_keypoints():
     assert pose["id"] == "pose_1"
     assert len(pose["keypoints"]) == 17
     assert pose["keypoints"][9]["name"] == "left_wrist"
+    tracked = json.loads(_pose_metadata([(box, points)], [42]))
+    assert tracked["poses"][0]["id"] == "42"
+
+
+def test_segmentation_metadata_stays_inside_udp_budget():
+    mask = np.zeros((80, 120), np.uint8)
+    mask[10:70, 10:110] = 255
+    tracks = tuple(
+        ObjectTrack(i, 41, "cup", mask, (60, 40), "stationary", 1, 2, score=0.9)
+        for i in range(1, 801)
+    )
+    encoded = _segmentation_metadata(FrameState(2, 120, 80, tracks, ()))
+    assert len(encoded.encode()) <= 60_000
+    assert len(json.loads(encoded)["segments"]) < len(tracks)
+
+
+def test_frame_writer_returns_public_path_and_drains(tmp_path):
+    writer = FrameWriter(tmp_path / "frames")
+    ts = float(int(time.time()))
+    assert writer.submit(ts, np.zeros((20, 30, 3), np.uint8)) == f"frames/frame-{int(ts)}.jpg"
+    writer.close()
+    assert (tmp_path / "frames" / f"frame-{int(ts)}.jpg").is_file()
+
+
+def test_perception_configuration_rejects_invalid_runtime_values():
+    cfg = PerceptionConfig("http://camera", "seg", "pose", "labels")
+    try:
+        _validate_config(cfg, 640, 480, 30)
+    except ValueError as exc:
+        assert "RTSP" in str(exc)
+    else:
+        raise AssertionError("invalid source protocol was accepted")
+
+
+def test_track_writer_drains_without_erasing_vlm_name(tmp_path):
+    from recall.memory import Memory
+
+    memory = Memory(tmp_path / "recall.db")
+    mask = np.ones((10, 10), np.uint8)
+    named = ObjectTrack(1, 41, "cup", mask, (5, 5), "stationary", 1, 2, name="red mug")
+    memory.upsert_object(named, "crops/object-1.jpg", (10, 10))
+    stale = ObjectTrack(1, 41, "cup", mask, (5, 5), "stationary", 1, 3, name=None)
+    writer = TrackWriter(memory)
+    writer.submit((stale,), (), (10, 10))
+    writer.close()
+    item = memory.inventory()[0]
+    assert item["name"] == "red mug"
+    assert item["crop_path"] == "crops/object-1.jpg"
+    memory.close()

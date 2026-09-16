@@ -22,6 +22,7 @@
     <div><span>OBJECTS</span><strong id="object-count">0</strong></div>
     <div><span>VLM CALLS</span><strong id="vlm-calls">0</strong></div>
     <div><span>VLM P50</span><strong id="vlm-latency">0 ms</strong></div>
+    <div><span>SPEECH</span><strong id="tts-status">-</strong></div>
     <div class="model-stat"><span>RESIDENT MODEL</span><strong id="model-name">-</strong></div>
   </section>
 
@@ -38,8 +39,8 @@
         <div class="section-title"><h2>Ask Recall</h2></div>
         <form id="ask-form">
           <input id="question" name="question" autocomplete="off" placeholder="Where is the red mug?" aria-label="Question">
-          <button id="mic-button" class="icon-button mic" type="button" title="Ask by voice" aria-label="Ask by voice">&#9679;</button>
-          <button class="send-button" type="submit">Ask</button>
+          <button id="mic-button" class="icon-button mic" type="button" title="Ask by voice" aria-label="Ask by voice" aria-pressed="false"><span class="mic-icon" aria-hidden="true"></span></button>
+          <button id="ask-button" class="send-button" type="submit">Ask</button>
         </form>
         <div id="answer" class="answer" aria-live="polite">Recall is indexing the room.</div>
         <div id="answer-snapshots" class="snapshot-grid"></div>

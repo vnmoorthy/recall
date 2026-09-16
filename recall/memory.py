@@ -37,6 +37,9 @@ class Memory:
         self._lock = threading.RLock()
         self._db = sqlite3.connect(self.path, check_same_thread=False)
         self._db.row_factory = sqlite3.Row
+        self._db.execute("PRAGMA journal_mode=WAL")
+        self._db.execute("PRAGMA synchronous=NORMAL")
+        self._db.execute("PRAGMA busy_timeout=5000")
         self._db.executescript(SCHEMA)
         self._db.commit()
 
@@ -47,17 +50,65 @@ class Memory:
     def reset(self) -> None:
         """Clear all memory rows; used only by the isolated synthetic demo database."""
         with self._lock:
-            self._db.executescript("DELETE FROM events; DELETE FROM persons; DELETE FROM objects;")
+            self._db.executescript(
+                "DELETE FROM events; DELETE FROM persons; DELETE FROM objects; "
+                "DELETE FROM sqlite_sequence WHERE name='events';"
+            )
             self._db.commit()
 
-    def upsert_object(self, obj: ObjectTrack, crop_path: str | None = None) -> None:
+    @staticmethod
+    def _object_values(
+        obj: ObjectTrack,
+        crop_path: str | None = None,
+        frame_size: tuple[int, int] | None = None,
+    ):
+        centroid = obj.centroid
+        if frame_size and frame_size[0] > 0 and frame_size[1] > 0:
+            centroid = (centroid[0] / frame_size[0], centroid[1] / frame_size[1])
+        return (
+            obj.id, obj.class_name, obj.name, obj.state, json.dumps(centroid),
+            obj.first_seen, obj.last_seen, crop_path,
+        )
+
+    def upsert_object(
+        self,
+        obj: ObjectTrack,
+        crop_path: str | None = None,
+        frame_size: tuple[int, int] | None = None,
+    ) -> None:
         with self._lock:
             self._db.execute(
                 """INSERT INTO objects VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET class=excluded.class, name=excluded.name,
+                ON CONFLICT(id) DO UPDATE SET class=excluded.class,
+                name=COALESCE(excluded.name, objects.name),
                 state=excluded.state, last_centroid=excluded.last_centroid,
                 last_seen=excluded.last_seen, crop_path=COALESCE(excluded.crop_path, objects.crop_path)""",
-                (obj.id, obj.class_name, obj.name, obj.state, json.dumps(obj.centroid), obj.first_seen, obj.last_seen, crop_path),
+                self._object_values(obj, crop_path, frame_size),
+            )
+            self._db.commit()
+
+    def upsert_tracks(
+        self,
+        objects: tuple[ObjectTrack, ...],
+        persons: tuple[PersonTrack, ...],
+        frame_size: tuple[int, int],
+    ) -> None:
+        """Persist one frame of tracks in a single WAL transaction."""
+        with self._lock:
+            self._db.executemany(
+                """INSERT INTO objects VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET class=excluded.class,
+                name=COALESCE(excluded.name, objects.name),
+                state=excluded.state, last_centroid=excluded.last_centroid,
+                last_seen=excluded.last_seen, crop_path=COALESCE(excluded.crop_path, objects.crop_path)""",
+                [self._object_values(obj, frame_size=frame_size) for obj in objects],
+            )
+            self._db.executemany(
+                """INSERT INTO persons VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET name=COALESCE(excluded.name, persons.name),
+                last_seen=excluded.last_seen,
+                crop_path=COALESCE(excluded.crop_path, persons.crop_path)""",
+                [(p.id, p.name, p.first_seen, p.last_seen, None) for p in persons],
             )
             self._db.commit()
 
@@ -65,7 +116,8 @@ class Memory:
         with self._lock:
             self._db.execute(
                 """INSERT INTO persons VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET name=excluded.name, last_seen=excluded.last_seen,
+                ON CONFLICT(id) DO UPDATE SET name=COALESCE(excluded.name, persons.name),
+                last_seen=excluded.last_seen,
                 crop_path=COALESCE(excluded.crop_path, persons.crop_path)""",
                 (person.id, person.name, person.first_seen, person.last_seen, crop_path),
             )

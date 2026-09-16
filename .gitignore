@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv-pipertts/
 data/*.db
+data/*.db-*
 logs/*
 !logs/.gitkeep
 run/*

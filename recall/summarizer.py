@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from .answerer import LocalVLMClient, build_context, parse_json_response
+from .answerer import LocalVLMClient, build_context, clean_model_text, parse_json_response
 from .memory import Memory
 
 IMPORTANCE = {"picked_up": 5, "object_missing": 4, "put_down": 3, "person_entered": 2, "object_moved": 1}
@@ -17,7 +17,11 @@ class Summarizer:
 
     def summarize(self, window: int = 900, now: float | None = None) -> dict:
         context = build_context(self.memory, window, now)
-        important = sorted(context["events"], key=lambda event: (IMPORTANCE.get(event["type"], 0), event["time"]), reverse=True)
+        important = sorted(
+            context["events"],
+            key=lambda event: (IMPORTANCE.get(event["type"], 0), event["timestamp"]),
+            reverse=True,
+        )
         chosen = important[:2]
         if self.client and context["events"]:
             try:
@@ -26,7 +30,9 @@ class Summarizer:
                     f"Memory JSON: {json.dumps(context, separators=(',', ':'))}\nWrite exactly three factual sentences. Return only JSON {{\"summary\":\"...\"}}.",
                     128,
                 )
-                summary = str(parse_json_response(text)["summary"])
+                summary = clean_model_text(parse_json_response(text)["summary"], 1600)
+                if not summary:
+                    raise ValueError("model returned an empty summary")
             except Exception:
                 summary, latency = self._fallback(context), 0.0
         else:

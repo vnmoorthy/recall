@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from recall.masks import area, centroid, encode_uncompressed_rle, iou, jpeg_crop, project_letterbox_mask
 
@@ -24,3 +25,13 @@ def test_letterbox_projection_and_rle():
     rle = encode_uncompressed_rle(projected)
     assert sum(rle) == projected.size
     assert rle[0] > 0
+
+
+def test_invalid_projection_and_points_fail_safely():
+    head = np.ones((160, 160), np.uint8) * 255
+    assert not project_letterbox_mask(head, (-100, 0, -10, 20), (400, 300)).any()
+    assert not project_letterbox_mask(head, (20, 20, 10, 30), (400, 300)).any()
+    with pytest.raises(ValueError):
+        project_letterbox_mask(head, (0, 0, 10, 10), (0, 300))
+    with pytest.raises(ValueError):
+        jpeg_crop(np.zeros((10, 10, 3), np.uint8), head, margin=-1)

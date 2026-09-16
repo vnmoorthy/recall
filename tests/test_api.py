@@ -54,6 +54,7 @@ def test_api_health_question_and_local_speech(tmp_path):
     )
     with TestClient(app) as client:
         assert client.get("/health").json()["status"] == "ok"
+        assert client.get("/status").json()["tts"] == "piper-ready"
         answer = client.post("/ask", json={"question": "Where is my mug?"})
         assert answer.status_code == 200
         assert speaker.spoken
@@ -62,3 +63,12 @@ def test_api_health_question_and_local_speech(tmp_path):
         assert speech.headers["content-type"] == "audio/wav"
         with wave.open(BytesIO(speech.content), "rb") as wav:
             assert wav.getframerate() == 16000
+        assert client.get("/events?window=0").status_code == 422
+        assert client.post("/ask", json={"question": "x" * 501}).status_code == 422
+        assert client.post("/summary", json={"window": 86401}).status_code == 422
+        assert client.get("/objects/0/timeline").status_code == 400
+        assert client.post("/v1/audio/speech", json={"input": "hi", "voice": "unknown"}).status_code == 422
+        empty = client.post("/ask_audio", files={"file": ("empty.wav", b"", "audio/wav")})
+        assert empty.status_code == 400
+        not_a_file = client.post("/ask_audio", data={"file": "not-a-file"})
+        assert not_a_file.status_code == 400

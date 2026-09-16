@@ -60,7 +60,7 @@ def bootstrap(memory: Memory, media_dir: str | Path) -> None:
         mask = np.zeros((450, 800), np.uint8)
         cv2.circle(mask, center, 30, 255, -1)
         obj = ObjectTrack(object_id, object_id, class_name, mask, center, state, now - 900, now - 120 if state == "missing" else now, name=name, stationary_since=now - 800)
-        memory.upsert_object(obj, "frames/scene-now.jpg")
+        memory.upsert_object(obj, "frames/scene-now.jpg", (800, 450))
     events = [
         Event(now - 540, "object_appeared", 1, frame_path="frames/scene-inventory.jpg"),
         Event(now - 540, "object_appeared", 2, frame_path="frames/scene-inventory.jpg"),

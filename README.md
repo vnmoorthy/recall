@@ -108,6 +108,10 @@ ssh sima@10.42.0.232 \
   'cd /workspace/recall && source ~/pyneat/bin/activate && ./run_devkit.sh'
 ```
 
+Use `./run_devkit.sh --restart` after deploying code or changing resident models.
+Use `./stop_devkit.sh` for a clean shutdown. On a fresh board, install local
+speech once with `./setup_tts_devkit.sh`.
+
 Start the UI in the SDK container (the shared Mac workspace can run the same
 command):
 
@@ -187,12 +191,12 @@ Measurements below were taken on 2026-09-16 on the connected Modalix board.
 | Gemma text warmup TTFT | 0.21 s |
 | Gemma measured generation | 32.83 tokens/s |
 | VLM crop naming (`Red mug icon`) | 0.594 s |
-| Custody question, evidence + snapshots | 2.908 s |
+| Custody question, evidence + snapshots | 2.345 s |
 | Three-sentence summary | 2.760 s |
-| Whisper Small transcription | 1.18 s including answer in final smoke |
-| Piper warm synthesis/API call | 0.58 s |
-| Piper first-use load + synthesis | 9.90 s |
-| Test suite | 17 passed, 1 hardware-recording gate skipped |
+| Whisper Small transcription + answer | 1.669 s |
+| Piper post-prewarm synthesis/API call | 1.15-1.63 s |
+| Piper model warmup | asynchronous during service startup |
+| Test suite | 31 passed, 1 hardware-recording gate skipped |
 
 The active MLA shared-memory service is `simaai-appcomplex.service`. Observed
 process RSS was approximately 158 MB preview, 471 MB GenAI server, and 173 MB
@@ -243,5 +247,6 @@ RECALL_HARDWARE_E2E=1 python3 -m pytest -q tests/test_e2e_recorded.py
 - The synthetic and hardware databases are isolated as `recall-demo.db` and
   `recall.db`, so rehearsals cannot overwrite real history.
 
-See `docs/deck.md` for the six-slide presentation outline and `config.yaml` for
-all source, model, tracking, memory, API, and Insight settings.
+See `docs/deck.md` for the six-slide presentation outline,
+`docs/iterations-50.md` for the product audit, and `config.yaml` for all source,
+model, tracking, memory, API, and Insight settings.

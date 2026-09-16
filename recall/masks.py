@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Iterable
+import math
 
 import cv2
 import numpy as np
@@ -60,12 +61,18 @@ def project_letterbox_mask(
     """Project a full letterboxed mask head into a frame-sized binary mask."""
     frame_w, frame_h = frame_size
     model_w, model_h = model_size
+    if min(frame_w, frame_h, model_w, model_h) <= 0:
+        raise ValueError("frame and model dimensions must be positive")
     source = np.asarray(mask)
     mask_h, mask_w = source.shape[:2]
     scale = min(model_w / frame_w, model_h / frame_h)
     pad_x = (model_w - frame_w * scale) / 2.0
     pad_y = (model_h - frame_h * scale) / 2.0
     x1, y1, x2, y2 = bbox
+    if not all(math.isfinite(value) for value in bbox) or x2 <= x1 or y2 <= y1:
+        return np.zeros((frame_h, frame_w), dtype=np.uint8)
+    if x2 <= 0 or y2 <= 0 or x1 >= frame_w or y1 >= frame_h:
+        return np.zeros((frame_h, frame_w), dtype=np.uint8)
 
     mx0 = max(0, min(mask_w - 1, int(np.floor((x1 * scale + pad_x) * mask_w / model_w))))
     my0 = max(0, min(mask_h - 1, int(np.floor((y1 * scale + pad_y) * mask_h / model_h))))
@@ -88,6 +95,8 @@ def jpeg_crop(
     margin: float = 0.12,
     quality: int = 88,
 ) -> bytes:
+    if margin < 0:
+        raise ValueError("crop margin cannot be negative")
     x, y, width, height = bbox_from_mask(mask)
     if width <= 0 or height <= 0:
         raise ValueError("cannot crop an empty mask")
@@ -109,6 +118,8 @@ def point_distance(mask: np.ndarray, point: tuple[float, float]) -> float:
     if not binary.any():
         return float("inf")
     x, y = point
+    if not math.isfinite(x) or not math.isfinite(y):
+        return float("inf")
     xi, yi = int(round(x)), int(round(y))
     if 0 <= yi < binary.shape[0] and 0 <= xi < binary.shape[1] and binary[yi, xi]:
         return 0.0
