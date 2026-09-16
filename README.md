@@ -134,17 +134,16 @@ The two YOLO26 archives were downloaded and gzip-validated into the shared `mode
 dd516a687ef1a7efa3f40da5e459541aa1d2c78fcb2ecce8de74bdbe80c7a1e1  yolo26m-pose-int8-b1.tar.gz
 ```
 
-**2. Start the board.** `run_devkit.sh` prefers Qwen, then Gemma, then deterministic evidence rules. On a fresh board, install local speech once with `./setup_tts_devkit.sh`.
+**2. Start the real product from the SDK host.** The launcher checks the two model archives, starts the DevKit services, waits for hardware mode with nonzero segmentation and pose FPS, and starts the local UI. `run_devkit.sh` prefers Qwen, then Gemma, then deterministic evidence rules. On a fresh board, install local speech once with `./setup_tts_devkit.sh`.
 
 ```bash
-ssh sima@10.42.0.232 'cd /workspace/recall && source ~/pyneat/bin/activate && ./run_devkit.sh'
+cd /workspace/recall
+./start_live_product.sh
 ```
 
-**3. Open the UI** from the SDK container or the shared Mac workspace.
+**3. Open the UI** at the URL printed by the launcher.
 
-```bash
-cd /workspace/recall && ./run_mac.sh
-```
+The default is `http://127.0.0.1:8080/app.html`. The public GitHub Pages site is a recorded simulation and is not a substitute for this directly connected URL.
 
 | Surface | URL |
 |---|---|
