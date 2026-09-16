@@ -15,6 +15,11 @@ class HallucinatedTimeClient:
         return '{"answer":"The mug moved at 23:59:59.","event_ids":[6],"object_ids":[1]}', 5.0
 
 
+class MisleadingInventoryClient:
+    def chat(self, system, user, max_tokens):
+        return '{"answer":"Everything is on the table.","event_ids":[1],"object_ids":[1]}', 5.0
+
+
 def test_window_parser():
     assert parse_window("what happened in the last 10 minutes") == 600
     assert parse_window("last 2 hours") == 7200
@@ -40,12 +45,22 @@ def test_inventory_question_lists_present_objects(tmp_path: Path):
     answer = Answerer(memory).ask("What's on the table?")["answer"]
     assert "green water bottle" in answer
     assert "blue hardcover book" in answer
+    assert "red ceramic mug" not in answer
+    assert "silver laptop" not in answer
+
+
+def test_structured_intent_uses_deterministic_evidence_rendering(tmp_path: Path):
+    memory = Memory(tmp_path / "recall.db")
+    bootstrap(memory, tmp_path / "media")
+    answer = Answerer(memory, MisleadingInventoryClient()).ask("What's on the table?")
+    assert "Everything" not in answer["answer"]
+    assert "green water bottle" in answer["answer"]
 
 
 def test_model_cannot_cite_unknown_memory_ids(tmp_path: Path):
     memory = Memory(tmp_path / "recall.db")
     bootstrap(memory, tmp_path / "media")
-    result = Answerer(memory, InvalidEvidenceClient()).ask("Where is the mug?")
+    result = Answerer(memory, InvalidEvidenceClient()).ask("Explain the room state")
     assert result["event_ids"] == [1]
     assert result["object_ids"] == [1]
 
@@ -53,9 +68,9 @@ def test_model_cannot_cite_unknown_memory_ids(tmp_path: Path):
 def test_model_cannot_invent_event_times(tmp_path: Path):
     memory = Memory(tmp_path / "recall.db")
     bootstrap(memory, tmp_path / "media")
-    result = Answerer(memory, HallucinatedTimeClient()).ask("Where is the mug?")
+    result = Answerer(memory, HallucinatedTimeClient()).ask("Explain the anomaly")
     assert "23:59:59" not in result["answer"]
-    assert result["event_ids"] == [7]
+    assert result["event_ids"] == []
 
 
 def test_context_caps_historical_inventory():

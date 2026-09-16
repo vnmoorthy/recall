@@ -173,6 +173,16 @@ latencies are appended to `logs/vlm.jsonl`.
 
 ## Demo Script
 
+Prepare fresh evidence and run the complete presentation smoke test from the
+DevKit with one command:
+
+```bash
+ssh sima@10.42.0.232 'cd /workspace/recall && ./demo_live.sh --prepare'
+```
+
+Use `./demo_live.sh` without `--prepare` for a fast check that preserves the
+running processes.
+
 1. Show the five objects and ask, "What's on the table?"
 2. Move the mug out of frame and ask, "Where is the red mug?"
 3. Have a person take the laptop and ask, "Who took my laptop?"
@@ -198,7 +208,7 @@ Measurements below were taken on 2026-09-16 on the connected Modalix board.
 | Whisper Small transcription + answer | 3.774 s |
 | Piper post-prewarm synthesis/API call | 0.539 s |
 | Piper model warmup | asynchronous during service startup |
-| Test suite | 39 passed, 1 hardware-recording gate skipped |
+| Test suite | 40 passed, 1 hardware-recording gate skipped |
 
 The active MLA shared-memory service is `simaai-appcomplex.service`. Observed
 process RSS was approximately 158 MB preview, 471 MB GenAI server, and 173 MB

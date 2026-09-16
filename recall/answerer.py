@@ -165,6 +165,9 @@ class Answerer:
                 result = self._fallback(question, context)
         else:
             result = self._fallback(question, context)
+        deterministic = self._fallback(question, context)
+        if deterministic.get("event_ids") or deterministic.get("object_ids"):
+            result = deterministic
         raw_event_ids = result.get("event_ids", [])
         raw_object_ids = result.get("object_ids", [])
         if not isinstance(raw_event_ids, list):

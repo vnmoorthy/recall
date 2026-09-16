@@ -54,7 +54,7 @@ or recorded an external asset gate without claiming it was complete.
 | 96 | Preview availability was inferred only from a PID. | Insight confirmed live H.264 ingress on channel 0. |
 | 97 | No attached browser could be mistaken for failed ingress. | Ingest stats show valid H.264 while accurately reporting no WebRTC peer. |
 | 98 | Exact YOLO26/Qwen execution was still assumed by the brief. | It remains explicitly gated on authenticated SiMa assets. |
-| 99 | New boundaries had no regression tests. | The suite grew from 31 to 39 passing tests. |
+| 99 | New boundaries had no regression tests. | The suite grew from 31 to 40 passing tests. |
 | 100 | Changes were not yet proven as a deployed product. | The DevKit was restarted and typed, summary, speech, ASR, history, and readiness paths passed. |
 
 ## End-State Verification
@@ -65,7 +65,7 @@ or recorded an external asset gate without claiming it was complete.
 - Piper: 0.54 seconds for a valid mono 16-bit 22.05 kHz WAV.
 - Whisper plus evidence answer: 3.77 seconds with the phrase transcribed correctly.
 - Insight: active H.264 channel 0, SPS/PPS/IDR present, no malformed packets or estimated sequence gaps.
-- Tests: `39 passed, 1 skipped`; the skip is the exact-model recorded pickup gate.
+- Tests: `40 passed, 1 skipped`; the skip is the exact-model recorded pickup gate.
 
 The post-ledger smoke also caught a Gemma response that used valid evidence IDs
 but invented a clock time. Model answers now pass a timestamp-grounding check;
