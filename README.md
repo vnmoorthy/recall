@@ -19,6 +19,7 @@ external font, script, or image dependency.
 
 [Watch or download the 1280x720 MP4](demo/recall-product-demo.mp4) ·
 [Presenter script](docs/DEMO_SCRIPT.md) ·
+[Verification guide](docs/VERIFY_PRODUCT.md) ·
 [Reusable browser recorder](tools/record_demo.py)
 
 This recorded cut demonstrates the offline `SIMULATION` workflow and labels it

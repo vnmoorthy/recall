@@ -204,6 +204,7 @@ function renderDemoPhase(phase, announce = false) {
 function activateDemo() {
   state.demoMode = true;
   byId("viewer-frame").classList.add("demo-mode");
+  byId("perception-title").textContent = "RECORDED PERCEPTION";
   byId("feed-state").textContent = "LOCAL REPLAY";
   byId("offline-badge").textContent = "LOCAL ONLY";
   byId("mic-button").disabled = true;
@@ -252,6 +253,7 @@ async function refresh() {
     if (state.scenarioRunning) stopScenario(false);
     state.demoMode = false;
     byId("viewer-frame").classList.remove("demo-mode");
+    byId("perception-title").textContent = "LIVE PERCEPTION";
     byId("feed-state").textContent = "LIVE LINK";
     byId("query-state").textContent = "READY";
     byId("mic-button").disabled = false;
@@ -407,6 +409,54 @@ byId("mic-button").addEventListener("click", async () => {
   } catch (error) { byId("answer").textContent = error.message; }
 });
 
+async function runDiagnostics() {
+  const rerun = byId("rerun-diagnostics");
+  rerun.disabled = true;
+  byId("diagnostic-count").textContent = "CHECKING PRODUCT PATHS";
+  byId("diagnostic-headline").textContent = "VERIFYING LOCAL AND HARDWARE MODES";
+  byId("diagnostic-results").innerHTML = '<div class="empty">RUNNING SYSTEM CHECK</div>';
+
+  const video = byId("demo-view");
+  const startTime = video.currentTime;
+  await delay(500);
+  const videoReady = !video.error && (video.readyState >= 2 || video.currentTime > startTime);
+  const objectCount = byId("inventory").querySelectorAll("[data-object-id]").length;
+  const eventCount = byId("timeline").querySelectorAll(".event").length;
+  const queryReady = Boolean(state.demo && demoAnswer("Where is the red mug?").answer);
+
+  let apiStatus = null;
+  try {
+    apiStatus = await json("/status", {signal:timeoutSignal(2200)});
+  } catch (_error) {
+    apiStatus = null;
+  }
+  const apiOnline = Boolean(apiStatus);
+  const hardwareLive = apiOnline
+    && apiStatus.perception_mode === "hardware"
+    && Number(apiStatus.seg_fps) > 0
+    && Number(apiStatus.pose_fps) > 0;
+
+  const checks = [
+    {name:"BROWSER INTERFACE", detail:"Core controls and status panels are mounted.", ok:Boolean(byId("ask-form") && byId("inventory") && byId("timeline")), required:true},
+    {name:"RECORDED FEED", detail:videoReady ? "The bundled local video is decoding and advancing." : "The bundled video did not advance.", ok:videoReady, required:true},
+    {name:"MEMORY WORKFLOW", detail:`${objectCount} objects // ${eventCount} events // query ${queryReady ? "ready" : "failed"}`, ok:objectCount > 0 && eventCount > 0 && queryReady, required:true},
+    {name:"SIMA API", detail:apiOnline ? `${state.api} responded.` : `${state.api} is unreachable from this browser.`, ok:apiOnline, offline:!apiOnline},
+    {name:"LIVE PERCEPTION", detail:hardwareLive ? `${Number(apiStatus.seg_fps).toFixed(1)} seg FPS // ${Number(apiStatus.pose_fps).toFixed(1)} pose FPS` : "Requires a connected DevKit in hardware mode with nonzero FPS.", ok:hardwareLive, offline:!hardwareLive},
+  ];
+  const localChecks = checks.filter((check) => check.required);
+  const localPassed = localChecks.filter((check) => check.ok).length;
+  byId("diagnostic-results").innerHTML = checks.map((check) => {
+    const status = check.ok ? "PASS" : check.offline ? "OFFLINE" : "FAIL";
+    const statusClass = check.ok ? "pass" : check.offline ? "offline" : "fail";
+    return `<div class="diagnostic-row"><div><strong>${escapeHtml(check.name)}</strong><span>${escapeHtml(check.detail)}</span></div><p class="diagnostic-result ${statusClass}">${status}</p></div>`;
+  }).join("");
+  byId("diagnostic-count").textContent = `${localPassed}/${localChecks.length} LOCAL CHECKS PASS`;
+  byId("diagnostic-headline").textContent = localPassed !== localChecks.length
+    ? "LOCAL DEMO CHECK FAILED"
+    : hardwareLive ? "LIVE PERCEPTION ONLINE" : "LOCAL DEMO READY // HARDWARE OFFLINE";
+  rerun.disabled = false;
+}
+
 const dialog = byId("settings-dialog");
 byId("settings-button").addEventListener("click", () => {
   byId("api-url").value = state.api;
@@ -430,6 +480,13 @@ byId("save-settings").addEventListener("click", (event) => {
   byId("live-view").src = state.insight;
   setTimeout(refresh, 0);
 });
+
+const diagnosticsDialog = byId("diagnostics-dialog");
+byId("self-test-button").addEventListener("click", () => {
+  diagnosticsDialog.showModal();
+  runDiagnostics();
+});
+byId("rerun-diagnostics").addEventListener("click", runDiagnostics);
 
 function updateClock() {
   byId("feed-clock").textContent = `${new Date().toISOString().slice(11, 19)} UTC`;

@@ -21,6 +21,7 @@
     <div class="status-group">
       <span id="mode-badge" class="badge warning"><i></i>CONNECTING</span>
       <span id="offline-badge" class="badge neutral">LOCAL ONLY</span>
+      <button id="self-test-button" class="icon-button" title="Run system check" aria-label="Run system check"><span aria-hidden="true">&#10003;</span></button>
       <button id="settings-button" class="icon-button" title="Connection settings" aria-label="Connection settings"><span aria-hidden="true">&#9881;</span></button>
     </div>
   </header>
@@ -39,7 +40,7 @@
     <section class="workspace">
       <div class="live-pane">
         <div class="section-heading">
-          <div><span class="section-index">01</span><span class="eyebrow">LIVE PERCEPTION</span></div>
+          <div><span class="section-index">01</span><span id="perception-title" class="eyebrow">LIVE PERCEPTION</span></div>
           <div class="scenario-tools">
             <div class="feed-state"><i></i><span id="feed-state">ACQUIRING</span></div>
             <button id="scenario-button" class="scenario-button" type="button"><span id="scenario-icon" aria-hidden="true">&#9654;</span><span id="scenario-action">RUN SCENARIO</span></button>
@@ -114,6 +115,15 @@
       <label>RECALL API<input id="api-url" value="http://10.42.0.232:8090"></label>
       <label>INSIGHT VIEWER<input id="insight-url" value="https://10.42.0.1:8081/static/viewer.html?mode=light&amp;src=0&amp;max_channels=4"></label>
       <button id="save-settings" class="send-button dialog-save" value="default">APPLY CONNECTION</button>
+    </form>
+  </dialog>
+  <dialog id="diagnostics-dialog" class="diagnostics-dialog">
+    <form method="dialog">
+      <div class="dialog-heading"><div><span>DIAGNOSTICS</span><h2>SYSTEM CHECK</h2></div><button class="icon-button" value="cancel" aria-label="Close">&#215;</button></div>
+      <div class="diagnostic-summary"><span id="diagnostic-count">CHECKING</span><strong id="diagnostic-headline">VERIFYING PRODUCT PATHS</strong></div>
+      <div id="diagnostic-results" class="diagnostic-results" aria-live="polite"></div>
+      <button id="rerun-diagnostics" class="secondary-button" type="button"><span>RERUN SYSTEM CHECK</span><span aria-hidden="true">&#8635;</span></button>
+      <button class="send-button dialog-save" value="cancel">DONE</button>
     </form>
   </dialog>
   <script src="app.js"></script>
